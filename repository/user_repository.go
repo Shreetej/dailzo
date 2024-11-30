@@ -28,6 +28,7 @@ func (r *UserRepository) CreateUser(ctx context.Context, user models.User) (stri
 		return " ", err
 	}
 
+	//get users id
 	id := GetIdToRecord("USR")
 	query := `INSERT INTO users (id, name, email, mobileno, password) VALUES ($1, $2, $3, $4, $5) RETURNING id`
 	err = r.db.QueryRow(ctx, query, id, user.Name, user.Email, user.MobileNo, string(hashedPassword)).Scan(&id)
