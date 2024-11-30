@@ -28,7 +28,7 @@ func LoadConfig() Config {
 		DBPort:     getEnv("DB_PORT", "5432"),
 		DBUser:     getEnv("DB_USER", "postgres"),
 		DBPassword: getEnv("DB_PASSWORD", "roger"),
-		DBName:     getEnv("DB_NAME", "dialzo"),
+		DBName:     getEnv("DB_NAME", "dailzo"),
 		AppPort:    getEnv("APP_PORT", "3000"),
 		JWTSecret:  getEnv("JWT_SECRET", "secret"),
 	}

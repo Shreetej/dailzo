@@ -20,20 +20,20 @@ func NewUserRepository(db *pgxpool.Pool) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-func (r *UserRepository) CreateUser(ctx context.Context, user models.User) (int, error) {
+func (r *UserRepository) CreateUser(ctx context.Context, user models.User) (string, error) {
 	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		print(err.Error())
-		return 0, err
+		return " ", err
 	}
 
-	var id int
-	query := `INSERT INTO users (name, email, mobileno, password) VALUES ($1, $2, $3, $4) RETURNING id`
-	err = r.db.QueryRow(ctx, query, user.Name, user.Email, user.MobileNo, string(hashedPassword)).Scan(&id)
+	id := GetIdToRecord("USR")
+	query := `INSERT INTO users (id, name, email, mobileno, password) VALUES ($1, $2, $3, $4, $5) RETURNING id`
+	err = r.db.QueryRow(ctx, query, id, user.Name, user.Email, user.MobileNo, string(hashedPassword)).Scan(&id)
 	if err != nil {
 		println("Error in query :", err.Error())
-		return 0, err
+		return " ", err
 	}
 	return id, nil
 }
