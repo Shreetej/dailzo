@@ -20,7 +20,7 @@ func NewAddressRepository(db *pgxpool.Pool) *AddressRepository {
 func (r *AddressRepository) CreateAddress(ctx context.Context, address models.Address) (string, error) {
 
 	id := GetIdToRecord("ADDRS")
-	query := `INSERT INTO address 
+	query := `INSERT INTO addresses 
 		(id, address_line_1, address_line_2, address_line_3, zip_pin, benchmark, user_id, city, state, type, longitude, latitude, created_on, last_updated_on, created_by, last_modified_by, mobileno, name)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 		RETURNING id`

@@ -133,8 +133,8 @@ func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
 // DeleteUser handles deleting a user by ID
 func (c *UserController) DeleteUser(ctx *fiber.Ctx) error {
 	idParam := ctx.Params("id")
-	userID, err := strconv.Atoi(idParam)
-	if err != nil {
+	userID := idParam
+	if userID == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid user ID",
 		})

@@ -3,11 +3,12 @@ package routes
 import (
 	"dailzo/controllers"
 	"dailzo/middleware"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func SetupRoutes(app *fiber.App, userController *controllers.UserController, addressController *controllers.AddressController) {
+func SetupRoutes(app *fiber.App, userController *controllers.UserController, addressController *controllers.AddressController, foodProductController *controllers.FoodProductController, productVariantController *controllers.ProductVariantController) {
 	api := app.Group("/api")
 
 	// Public routes
@@ -20,5 +21,10 @@ func SetupRoutes(app *fiber.App, userController *controllers.UserController, add
 	api.Delete("/users/:id", middleware.JWTMiddleware(), userController.DeleteUser)
 	api.Get("/users", middleware.JWTMiddleware(), userController.GetUsers)
 	api.Post("/address", middleware.JWTMiddleware(), addressController.CreateAddress)
+
+	api.Post("/foodproduct", middleware.JWTMiddleware(), foodProductController.CreateFoodProduct)
+	fmt.Print("User details:")
+
+	api.Post("/productvariant", middleware.JWTMiddleware(), productVariantController.CreateProductVariant)
 
 }

@@ -6,6 +6,7 @@ import (
 	"dailzo/db"
 	"dailzo/repository"
 	"dailzo/routes"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -22,6 +23,8 @@ func main() {
 	db.ConnectDatabase(cfg)
 	defer db.CloseDatabase()
 
+	fmt.Print("User details:")
+
 	// Initialize repositories and controllers
 	userRepo := repository.NewUserRepository(db.DB)
 	userController := controllers.NewUserController(userRepo)
@@ -29,11 +32,17 @@ func main() {
 	addressRepo := repository.NewAddressRepository(db.DB)
 	addressController := controllers.NewAddressController(addressRepo)
 
+	foodProductRepo := repository.NewFoodProductRepository(db.DB)
+	foodProductController := controllers.NewFoodProductController(foodProductRepo)
+
+	productVariantRepo := repository.NewProductVariantRepository(db.DB)
+	productVariantController := controllers.NewProductVariantController(productVariantRepo)
+
 	// Initialize Fiber app
 	app := fiber.New()
 
 	// Setup routes
-	routes.SetupRoutes(app, userController, addressController)
+	routes.SetupRoutes(app, userController, addressController, foodProductController, productVariantController)
 
 	// Graceful shutdown handling
 	go func() {
