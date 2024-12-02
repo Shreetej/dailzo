@@ -1,0 +1,476 @@
+{
+	"info": {
+		"_postman_id": "539f8124-4263-41f9-8181-a5e7ee3df185",
+		"name": "Dailzo",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "15326291"
+	},
+	"item": [
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"first_name\":\"Nitin\",\r\n    \"last_name\":\"Ghuge\",\r\n    \"middle_name\":\"\",\r\n    \"email\":\"nghuge4@gmail.com\",\r\n    \"mobileno\":\"9423769918\",\r\n    \"password\":\"Nitin\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/users"
+					},
+					"response": []
+				},
+				{
+					"name": "GetUserById",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/users/3"
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzMyNDExNjYsImlhdCI6MTczMzE1NDc2Niwic3ViIjoiVVNSMTczMzE0ODY5MyJ9.L-B_Z1kJj-TP2JJj7oDQ76YabkfNtZU_3AVpbmWRLhs",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n   \"first_name\":\"Nitin\",\r\n    \"last_name\":\"Ghuge\",\r\n    \"middle_name\":\"Pandhari\",\r\n    \"email\":\"nghuge4@gmail.com\",\r\n    \"mobileno\":\"9423769918\",\r\n    \"password\":\"Nitin\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/users"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Users",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzMyNDExNjYsImlhdCI6MTczMzE1NDc2Niwic3ViIjoiVVNSMTczMzE0ODY5MyJ9.L-B_Z1kJj-TP2JJj7oDQ76YabkfNtZU_3AVpbmWRLhs",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/users"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/users/7"
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\":\"nghuge4@gmail.com\",\r\n    \"password\":\"Nitin\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/login"
+					},
+					"response": []
+				},
+				{
+					"name": "New Request",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Address",
+			"item": [
+				{
+					"name": "Create Address",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": " eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzMyNDExNjYsImlhdCI6MTczMzE1NDc2Niwic3ViIjoiVVNSMTczMzE0ODY5MyJ9.L-B_Z1kJj-TP2JJj7oDQ76YabkfNtZU_3AVpbmWRLhs",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"address_line_1\": \"123 Main St\",\r\n  \"address_line_2\": \"Apt 4B\",\r\n  \"address_line_3\": null,\r\n  \"zip_pin\": \"123456\",\r\n  \"benchmark\": \"Near school\",\r\n  //\"user_id\": \"67890\",\r\n  \"city\": \"Springfield\",\r\n  \"state\": \"Illinois\",\r\n  \"type\": \"Home\",\r\n  \"longitude\": -89.6500,\r\n  \"latitude\": 49.8000,\r\n  \"mobileno\": \"788777577\",\r\n  \"name\": \"Second Address 2\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/address"
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/users"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Users",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/users"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/users/7"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "FoodProduct",
+			"item": [
+				{
+					"name": "Create FoodProduct",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": " eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzMyNDExNjYsImlhdCI6MTczMzE1NDc2Niwic3ViIjoiVVNSMTczMzE0ODY5MyJ9.L-B_Z1kJj-TP2JJj7oDQ76YabkfNtZU_3AVpbmWRLhs",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"address_line_1\": \"123 Main St\",\r\n  \"address_line_2\": \"Apt 4B\",\r\n  \"address_line_3\": null,\r\n  \"zip_pin\": \"123456\",\r\n  \"benchmark\": \"Near school\",\r\n  //\"user_id\": \"67890\",\r\n  \"city\": \"Springfield\",\r\n  \"state\": \"Illinois\",\r\n  \"type\": \"Home\",\r\n  \"longitude\": -89.6500,\r\n  \"latitude\": 39.8000,\r\n  \"mobileno\": \"788777577\",\r\n  \"name\": \"Second Address 2\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/address"
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/users"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Users",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/users"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/users/7"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Product variant",
+			"item": [
+				{
+					"name": "Create product variant",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": " eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzMyNDExNjYsImlhdCI6MTczMzE1NDc2Niwic3ViIjoiVVNSMTczMzE0ODY5MyJ9.L-B_Z1kJj-TP2JJj7oDQ76YabkfNtZU_3AVpbmWRLhs",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"address_line_1\": \"123 Main St\",\r\n  \"address_line_2\": \"Apt 4B\",\r\n  \"address_line_3\": null,\r\n  \"zip_pin\": \"123456\",\r\n  \"benchmark\": \"Near school\",\r\n  //\"user_id\": \"67890\",\r\n  \"city\": \"Springfield\",\r\n  \"state\": \"Illinois\",\r\n  \"type\": \"Home\",\r\n  \"longitude\": -89.6500,\r\n  \"latitude\": 39.8000,\r\n  \"mobileno\": \"788777577\",\r\n  \"name\": \"Second Address 2\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/address"
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/users"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Users",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/users"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/users/7"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
