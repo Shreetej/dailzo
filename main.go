@@ -26,11 +26,14 @@ func main() {
 	userRepo := repository.NewUserRepository(db.DB)
 	userController := controllers.NewUserController(userRepo)
 
+	addressRepo := repository.NewAddressRepository(db.DB)
+	addressController := controllers.NewAddressController(addressRepo)
+
 	// Initialize Fiber app
 	app := fiber.New()
 
 	// Setup routes
-	routes.SetupRoutes(app, userController)
+	routes.SetupRoutes(app, userController, addressController)
 
 	// Graceful shutdown handling
 	go func() {

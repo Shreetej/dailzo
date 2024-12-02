@@ -9,7 +9,7 @@ import (
 
 var jwtSecret = []byte(config.LoadConfig().JWTSecret)
 
-func GenerateJWT(userID int) (string, error) {
+func GenerateJWT(userID string) (string, error) {
 	claims := jwt.MapClaims{
 		"sub": userID,
 		"iat": time.Now().Unix(),

@@ -73,9 +73,9 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 }
 
 func (c *UserController) GetUser(ctx *fiber.Ctx) error {
-	userID := ctx.Locals("user_id").(float64)
+	userID := ctx.Locals("user_id").(string)
 	fmt.Println("UserId: ", userID)
-	user, err := c.repo.GetUserByID(ctx.Context(), int(userID))
+	user, err := c.repo.GetUserByID(ctx.Context(), string(userID))
 	if err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
@@ -90,7 +90,7 @@ func (c *UserController) GetUserById(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Error in Id"})
 	}
 	fmt.Println("UserId: ", userID)
-	user, err := c.repo.GetUserByID(ctx.Context(), int(id))
+	user, err := c.repo.GetUserByID(ctx.Context(), string(id))
 	if err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}

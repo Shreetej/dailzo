@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func SetupRoutes(app *fiber.App, userController *controllers.UserController) {
+func SetupRoutes(app *fiber.App, userController *controllers.UserController, addressController *controllers.AddressController) {
 	api := app.Group("/api")
 
 	// Public routes
@@ -19,5 +19,6 @@ func SetupRoutes(app *fiber.App, userController *controllers.UserController) {
 	api.Put("/users", middleware.JWTMiddleware(), userController.UpdateUser)
 	api.Delete("/users/:id", middleware.JWTMiddleware(), userController.DeleteUser)
 	api.Get("/users", middleware.JWTMiddleware(), userController.GetUsers)
+	api.Post("/address", middleware.JWTMiddleware(), addressController.CreateAddress)
 
 }
