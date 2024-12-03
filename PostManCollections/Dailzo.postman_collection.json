@@ -91,7 +91,7 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzMyNDExNjYsImlhdCI6MTczMzE1NDc2Niwic3ViIjoiVVNSMTczMzE0ODY5MyJ9.L-B_Z1kJj-TP2JJj7oDQ76YabkfNtZU_3AVpbmWRLhs",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzMzMzc3MzksImlhdCI6MTczMzI1MTMzOSwic3ViIjoiVVNSMTczMzE0ODY5MyJ9.WtL42iYIgBDYJ81zYy_lH7imhCtle_2emYIX4jCVx34",
 								"type": "text"
 							}
 						],
@@ -149,14 +149,6 @@
 						"url": "localhost:3000/api/login"
 					},
 					"response": []
-				},
-				{
-					"name": "New Request",
-					"request": {
-						"method": "GET",
-						"header": []
-					},
-					"response": []
 				}
 			]
 		},
@@ -188,31 +180,7 @@
 					"response": []
 				},
 				{
-					"name": "Update User",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": "localhost:3000/api/users"
-					},
-					"response": []
-				},
-				{
-					"name": "Get Users",
+					"name": "Get Addresses",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
 					},
@@ -235,30 +203,6 @@
 							}
 						},
 						"url": "localhost:3000/api/users"
-					},
-					"response": []
-				},
-				{
-					"name": "Delete User",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": "localhost:3000/api/users/7"
 					},
 					"response": []
 				}
@@ -280,89 +224,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"address_line_1\": \"123 Main St\",\r\n  \"address_line_2\": \"Apt 4B\",\r\n  \"address_line_3\": null,\r\n  \"zip_pin\": \"123456\",\r\n  \"benchmark\": \"Near school\",\r\n  //\"user_id\": \"67890\",\r\n  \"city\": \"Springfield\",\r\n  \"state\": \"Illinois\",\r\n  \"type\": \"Home\",\r\n  \"longitude\": -89.6500,\r\n  \"latitude\": 39.8000,\r\n  \"mobileno\": \"788777577\",\r\n  \"name\": \"Second Address 2\"\r\n}",
+							"raw": "{\r\n  \"name\": \"Veg Pizza\",\r\n  \"description\": \"A delicious vegetarian pizza with fresh ingredients.\",\r\n  \"category\": \"Pizza\",\r\n  \"type\": \"Veg\",\r\n  \"price\": 12.99,\r\n  \"image_url\": \"https://example.com/images/veg_pizza.jpg\",\r\n  \"is_active\": true\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
 								}
 							}
 						},
-						"url": "localhost:3000/api/address"
-					},
-					"response": []
-				},
-				{
-					"name": "Update User",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": "localhost:3000/api/users"
-					},
-					"response": []
-				},
-				{
-					"name": "Get Users",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": "localhost:3000/api/users"
-					},
-					"response": []
-				},
-				{
-					"name": "Delete User",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": "localhost:3000/api/users/7"
+						"url": "localhost:3000/api/foodproduct"
 					},
 					"response": []
 				}
@@ -384,89 +253,43 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"address_line_1\": \"123 Main St\",\r\n  \"address_line_2\": \"Apt 4B\",\r\n  \"address_line_3\": null,\r\n  \"zip_pin\": \"123456\",\r\n  \"benchmark\": \"Near school\",\r\n  //\"user_id\": \"67890\",\r\n  \"city\": \"Springfield\",\r\n  \"state\": \"Illinois\",\r\n  \"type\": \"Home\",\r\n  \"longitude\": -89.6500,\r\n  \"latitude\": 39.8000,\r\n  \"mobileno\": \"788777577\",\r\n  \"name\": \"Second Address 2\"\r\n}",
+							"raw": " {\r\n        \"product_id\": \"FPROD1733167899\",\r\n        \"variant_name\": \"Small\",\r\n        \"additional_description\": \"Small size, perfect for 1 person.\",\r\n        \"price\": 8.99,\r\n        \"quantity_available\": 100,\r\n        \"is_active\": true\r\n    }",
 							"options": {
 								"raw": {
 									"language": "json"
 								}
 							}
 						},
-						"url": "localhost:3000/api/address"
+						"url": "localhost:3000/api/productvariant"
 					},
 					"response": []
-				},
+				}
+			]
+		},
+		{
+			"name": "Restaurant",
+			"item": [
 				{
-					"name": "Update User",
+					"name": "Create Resaurant",
 					"request": {
-						"method": "PUT",
+						"method": "POST",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzMzMzc3MzksImlhdCI6MTczMzI1MTMzOSwic3ViIjoiVVNSMTczMzE0ODY5MyJ9.WtL42iYIgBDYJ81zYy_lH7imhCtle_2emYIX4jCVx34",
 								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
+							"raw": "{\r\n  \"name\": \"Sahara Pizza\",\r\n  \"address\": \"ADDRS1733160190\",\r\n  \"phone_number\": \"1234567890\",\r\n  \"email\": \"test@example.com\",\r\n  \"opening_time\": \"2023-12-01T08:00:00Z\",\r\n  \"closing_time\": \"2023-12-01T22:00:00Z\",\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
 								}
 							}
 						},
-						"url": "localhost:3000/api/users"
-					},
-					"response": []
-				},
-				{
-					"name": "Get Users",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": "localhost:3000/api/users"
-					},
-					"response": []
-				},
-				{
-					"name": "Delete User",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": "localhost:3000/api/users/7"
+						"url": "localhost:3000/api/restaurant"
 					},
 					"response": []
 				}
