@@ -26,20 +26,6 @@ CREATE TABLE IF NOT EXISTS public.addresses
     CONSTRAINT "Address_pkey" PRIMARY KEY (id)
 );
 
-CREATE TABLE IF NOT EXISTS public.delivery_persons
-(
-    id character varying COLLATE pg_catalog."default" NOT NULL,
-    name text COLLATE pg_catalog."default" NOT NULL,
-    phone_number text COLLATE pg_catalog."default" NOT NULL,
-    vehicle_number text COLLATE pg_catalog."default",
-    created_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    last_updated_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by character varying COLLATE pg_catalog."default",
-    last_modified_by character varying COLLATE pg_catalog."default",
-    CONSTRAINT delivery_persons_pkey PRIMARY KEY (id),
-    CONSTRAINT delivery_persons_phone_number_key UNIQUE (phone_number)
-);
-
 CREATE TABLE IF NOT EXISTS public.food_products
 (
     id character(36) COLLATE pg_catalog."default" NOT NULL,
@@ -226,20 +212,6 @@ ALTER TABLE IF EXISTS public.addresses
 
 ALTER TABLE IF EXISTS public.addresses
     ADD CONSTRAINT "Address_user_id_fkey" FOREIGN KEY (user_id)
-    REFERENCES public.users (id) MATCH SIMPLE
-    ON UPDATE NO ACTION
-    ON DELETE NO ACTION;
-
-
-ALTER TABLE IF EXISTS public.delivery_persons
-    ADD CONSTRAINT delivery_persons_created_by_fkey FOREIGN KEY (created_by)
-    REFERENCES public.users (id) MATCH SIMPLE
-    ON UPDATE NO ACTION
-    ON DELETE NO ACTION;
-
-
-ALTER TABLE IF EXISTS public.delivery_persons
-    ADD CONSTRAINT delivery_persons_last_modified_by_fkey FOREIGN KEY (last_modified_by)
     REFERENCES public.users (id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION;
