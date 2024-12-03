@@ -24,9 +24,11 @@ type Address struct {
 }
 
 type DisplayAddress struct {
-	ID            int        `json:"id"`
+	ID            string     `json:"id"`
 	Name          string     `json:"name"`
-	Email         string     `json:"email"`
+	AddressLine1  string     `json:"address_line_1"` // Required first address line
+	AddressLine2  *string    `json:"address_line_2"` // Optional second address line
+	AddressLine3  *string    `json:"address_line_3"` // Optional third address line
 	MobileNo      string     `json:"mobileno"`
 	CreatedOn     *time.Time `json:"created_at"`
 	LastUpdatedOn *time.Time `json:"updated_at"`

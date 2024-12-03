@@ -55,6 +55,7 @@ func SetupRoutes(
 	api.Get("/users", middleware.JWTMiddleware(), userController.GetUsers)
 
 	api.Post("/address", middleware.JWTMiddleware(), addressController.CreateAddress)
+	api.Get("/address", middleware.JWTMiddleware(), addressController.GetAddresses)
 	api.Get("/address/:id", middleware.JWTMiddleware(), addressController.GetAddressById)
 	api.Put("/address/:id", middleware.JWTMiddleware(), addressController.UpdateAddress)
 	api.Delete("/address/:id", middleware.JWTMiddleware(), addressController.DeleteAddress)

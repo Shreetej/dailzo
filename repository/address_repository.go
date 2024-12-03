@@ -4,8 +4,11 @@ import (
 	"context"
 	"dailzo/globals"
 	"dailzo/models"
+	"errors"
+	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -56,37 +59,59 @@ func (r *AddressRepository) CreateAddress(ctx context.Context, address models.Ad
 	return id, nil
 }
 
-func (r *AddressRepository) GetAddresses(ctx context.Context) (models.Address, error) {
-	var address models.Address
-	query := `SELECT id, address_line_1, address_line_2, address_line_3, zip_pin, benchmark, user_id, city, state, type, longitude, latitude, created_on, last_updated_on, created_by, last_modified_by, mobileno, name 
+func (r *AddressRepository) GetAddresses(ctx context.Context) ([]models.DisplayAddress, error) {
+	//var addresses []models.Address
+	query := `SELECT id, address_line_1, address_line_2, address_line_3, longitude, latitude, created_on, last_updated_on, mobileno, name 
 	          FROM addresses`
+	rows, err := r.db.Query(ctx, query)
 
-	err := r.db.QueryRow(ctx, query).Scan(
-		&address.ID,
-		&address.AddressLine1,
-		&address.AddressLine2,
-		&address.AddressLine3,
-		&address.ZIPPin,
-		&address.Benchmark,
-		&address.UserID,
-		&address.City,
-		&address.State,
-		&address.Type,
-		&address.Longitude,
-		&address.Latitude,
-		&address.CreatedOn,
-		&address.LastUpdatedOn,
-		&address.CreatedBy,
-		&address.LastModifiedBy,
-		&address.MobileNo,
-		&address.Name,
-	)
-
-	if err != nil {
-		return address, err
+	if err == pgx.ErrNoRows {
+		return nil, errors.New("no address found")
 	}
+	defer rows.Close()
+	addresses, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.DisplayAddress])
+	fmt.Println("Addresses : ", addresses)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+	return addresses, nil
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// defer rows.Close()
 
-	return address, nil
+	// for rows.Next() {
+	// 	var address models.Address
+	// 	if err := rows.Scan(
+	// 		&address.ID,
+	// 		&address.AddressLine1,
+	// 		&address.AddressLine2,
+	// 		&address.AddressLine3,
+	// 		&address.ZIPPin,
+	// 		&address.Benchmark,
+	// 		&address.UserID,
+	// 		&address.City,
+	// 		&address.State,
+	// 		&address.Type,
+	// 		&address.Longitude,
+	// 		&address.Latitude,
+	// 		&address.CreatedOn,
+	// 		&address.LastUpdatedOn,
+	// 		&address.CreatedBy,
+	// 		&address.LastModifiedBy,
+	// 		&address.MobileNo,
+	// 		&address.Name,
+	// 	); err != nil {
+	// 		return nil, err
+	// 	}
+	// 	addresses = append(addresses, address)
+	// }
+	// if err := rows.Err(); err != nil {
+	// 	return nil, err
+	// }
+
+	// return addresses, nil
 }
 
 func (r *AddressRepository) GetAddressByID(ctx context.Context, id string) (models.Address, error) {

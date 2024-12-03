@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"dailzo/config"
+	"dailzo/globals"
 	"dailzo/models"
 	"dailzo/repository"
 	"dailzo/utils"
@@ -68,6 +69,7 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 	// Log user login
 	log := config.SetupLogger()
 	log.Info().Msgf("User logged in with ID: %d", dbUser.ID)
+	globals.UpdateUserID(dbUser.ID)
 
 	return ctx.JSON(fiber.Map{"token": token})
 }
