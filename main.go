@@ -25,24 +25,63 @@ func main() {
 
 	fmt.Print("User details:")
 
-	// Initialize repositories and controllers
+	// // Initialize repositories and controllers
+	// userRepo := repository.NewUserRepository(db.DB)
+	// userController := controllers.NewUserController(userRepo)
+
+	// addressRepo := repository.NewAddressRepository(db.DB)
+	// addressController := controllers.NewAddressController(addressRepo)
+
+	// foodProductRepo := repository.NewFoodProductRepository(db.DB)
+	// foodProductController := controllers.NewFoodProductController(foodProductRepo)
+
+	// productVariantRepo := repository.NewProductVariantRepository(db.DB)
+	// productVariantController := controllers.NewProductVariantController(productVariantRepo)
+
+	// Repositories
 	userRepo := repository.NewUserRepository(db.DB)
-	userController := controllers.NewUserController(userRepo)
-
 	addressRepo := repository.NewAddressRepository(db.DB)
-	addressController := controllers.NewAddressController(addressRepo)
-
 	foodProductRepo := repository.NewFoodProductRepository(db.DB)
-	foodProductController := controllers.NewFoodProductController(foodProductRepo)
-
 	productVariantRepo := repository.NewProductVariantRepository(db.DB)
+	paymentRepo := repository.NewPaymentRepository(db.DB)
+	orderRepo := repository.NewOrderRepository(db.DB)
+	orderItemRepo := repository.NewOrderItemRepository(db.DB)
+	payMethodRepo := repository.NewPaymentMethodRepository(db.DB)
+	ratingRepo := repository.NewRatingRepository(db.DB)
+	refundRepo := repository.NewRefundRepository(db.DB)
+	restaurantRepo := repository.NewRestaurantRepository(db.DB)
+
+	// Controllers
+	userController := controllers.NewUserController(userRepo)
+	addressController := controllers.NewAddressController(addressRepo)
+	foodProductController := controllers.NewFoodProductController(foodProductRepo)
 	productVariantController := controllers.NewProductVariantController(productVariantRepo)
+	paymentController := controllers.NewPaymentController(paymentRepo)
+	orderController := controllers.NewOrderController(orderRepo)
+	orderItemController := controllers.NewOrderItemController(orderItemRepo)
+	payMethodController := controllers.NewPaymentMethodController(payMethodRepo)
+	ratingController := controllers.NewRatingController(ratingRepo)
+	refundController := controllers.NewRefundController(refundRepo)
+	restaurantController := controllers.NewRestaurantController(restaurantRepo)
 
 	// Initialize Fiber app
 	app := fiber.New()
 
 	// Setup routes
-	routes.SetupRoutes(app, userController, addressController, foodProductController, productVariantController)
+	routes.SetupRoutes(
+		app,
+		userController,
+		addressController,
+		foodProductController,
+		productVariantController,
+		paymentController,
+		orderController,
+		orderItemController,
+		payMethodController,
+		ratingController,
+		refundController,
+		restaurantController,
+	)
 
 	// Graceful shutdown handling
 	go func() {
