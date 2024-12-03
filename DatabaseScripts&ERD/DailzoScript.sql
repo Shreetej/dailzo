@@ -26,6 +26,20 @@ CREATE TABLE IF NOT EXISTS public.addresses
     CONSTRAINT "Address_pkey" PRIMARY KEY (id)
 );
 
+CREATE TABLE IF NOT EXISTS public.delivery_persons
+(
+    id character varying COLLATE pg_catalog."default" NOT NULL,
+    name text COLLATE pg_catalog."default" NOT NULL,
+    phone_number text COLLATE pg_catalog."default" NOT NULL,
+    vehicle_number text COLLATE pg_catalog."default",
+    created_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_updated_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by character varying COLLATE pg_catalog."default",
+    last_modified_by character varying COLLATE pg_catalog."default",
+    CONSTRAINT delivery_persons_pkey PRIMARY KEY (id),
+    CONSTRAINT delivery_persons_phone_number_key UNIQUE (phone_number)
+);
+
 CREATE TABLE IF NOT EXISTS public.food_products
 (
     id character(36) COLLATE pg_catalog."default" NOT NULL,
@@ -43,6 +57,89 @@ CREATE TABLE IF NOT EXISTS public.food_products
     CONSTRAINT food_product_pkey PRIMARY KEY (id)
 );
 
+CREATE TABLE IF NOT EXISTS public.menu_categories
+(
+    id character varying COLLATE pg_catalog."default" NOT NULL,
+    restaurant_id character varying COLLATE pg_catalog."default",
+    name text COLLATE pg_catalog."default" NOT NULL,
+    created_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_updated_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by character varying COLLATE pg_catalog."default",
+    last_modified_by character varying COLLATE pg_catalog."default",
+    CONSTRAINT menu_categories_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.order_items
+(
+    id character varying COLLATE pg_catalog."default" NOT NULL,
+    order_id character varying COLLATE pg_catalog."default",
+    product_variant_id character varying COLLATE pg_catalog."default",
+    quantity integer NOT NULL,
+    price numeric(10, 2) NOT NULL,
+    created_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_updated_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by character varying COLLATE pg_catalog."default",
+    last_modified_by character varying COLLATE pg_catalog."default",
+    CONSTRAINT order_items_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.orders
+(
+    id character varying COLLATE pg_catalog."default" NOT NULL,
+    user_id character varying COLLATE pg_catalog."default",
+    restaurant_id character varying COLLATE pg_catalog."default",
+    status text COLLATE pg_catalog."default" NOT NULL,
+    total_amount numeric(10, 2) NOT NULL,
+    order_date timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    delivery_person_id character varying COLLATE pg_catalog."default",
+    created_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_updated_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by character varying COLLATE pg_catalog."default",
+    last_modified_by character varying COLLATE pg_catalog."default",
+    CONSTRAINT orders_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.payment_methods
+(
+    id character varying COLLATE pg_catalog."default" NOT NULL,
+    user_id character varying COLLATE pg_catalog."default",
+    type text COLLATE pg_catalog."default" NOT NULL,
+    provider text COLLATE pg_catalog."default",
+    account_number text COLLATE pg_catalog."default",
+    expiry_date date,
+    is_default boolean DEFAULT false,
+    created_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_updated_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by character varying COLLATE pg_catalog."default",
+    last_modified_by character varying COLLATE pg_catalog."default",
+    name_on_card text COLLATE pg_catalog."default",
+    card_type text COLLATE pg_catalog."default",
+    cvv_encrypted text COLLATE pg_catalog."default",
+    bank_name text COLLATE pg_catalog."default",
+    ifsc_code text COLLATE pg_catalog."default",
+    account_holder_name text COLLATE pg_catalog."default",
+    is_active boolean DEFAULT true,
+    CONSTRAINT payment_methods_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.payments
+(
+    id character varying COLLATE pg_catalog."default" NOT NULL,
+    order_id character varying COLLATE pg_catalog."default",
+    user_id character varying COLLATE pg_catalog."default",
+    payment_method_id character varying COLLATE pg_catalog."default",
+    amount numeric(10, 2) NOT NULL,
+    status text COLLATE pg_catalog."default" NOT NULL,
+    transaction_id text COLLATE pg_catalog."default",
+    payment_date timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_updated_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by character varying COLLATE pg_catalog."default",
+    last_modified_by character varying COLLATE pg_catalog."default",
+    CONSTRAINT payments_pkey PRIMARY KEY (id),
+    CONSTRAINT payments_transaction_id_key UNIQUE (transaction_id)
+);
+
 CREATE TABLE IF NOT EXISTS public.product_variants
 (
     id character(36) COLLATE pg_catalog."default" NOT NULL,
@@ -57,6 +154,53 @@ CREATE TABLE IF NOT EXISTS public.product_variants
     created_by character(36) COLLATE pg_catalog."default",
     last_modified_by character(36) COLLATE pg_catalog."default",
     CONSTRAINT product_variant_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.ratings
+(
+    id character varying COLLATE pg_catalog."default" NOT NULL,
+    rating integer NOT NULL,
+    comment text COLLATE pg_catalog."default",
+    user_id character varying COLLATE pg_catalog."default",
+    entity_type text COLLATE pg_catalog."default" NOT NULL,
+    entity_id character varying COLLATE pg_catalog."default" NOT NULL,
+    created_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_updated_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by character varying COLLATE pg_catalog."default",
+    last_modified_by character varying COLLATE pg_catalog."default",
+    CONSTRAINT ratings_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.refunds
+(
+    id character varying COLLATE pg_catalog."default" NOT NULL,
+    payment_id character varying COLLATE pg_catalog."default",
+    user_id character varying COLLATE pg_catalog."default",
+    amount numeric(10, 2) NOT NULL,
+    reason text COLLATE pg_catalog."default",
+    status text COLLATE pg_catalog."default" NOT NULL,
+    refund_date timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_updated_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by character varying COLLATE pg_catalog."default",
+    last_modified_by character varying COLLATE pg_catalog."default",
+    CONSTRAINT refunds_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.restaurants
+(
+    id character varying COLLATE pg_catalog."default" NOT NULL,
+    name text COLLATE pg_catalog."default" NOT NULL,
+    address text COLLATE pg_catalog."default" NOT NULL,
+    phone_number text COLLATE pg_catalog."default",
+    email text COLLATE pg_catalog."default",
+    opening_time time without time zone,
+    closing_time time without time zone,
+    created_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_updated_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by character varying COLLATE pg_catalog."default",
+    last_modified_by character varying COLLATE pg_catalog."default",
+    CONSTRAINT restaurants_pkey PRIMARY KEY (id)
 );
 
 CREATE TABLE IF NOT EXISTS public.users
@@ -99,6 +243,20 @@ ALTER TABLE IF EXISTS public.addresses
     ON DELETE NO ACTION;
 
 
+ALTER TABLE IF EXISTS public.delivery_persons
+    ADD CONSTRAINT delivery_persons_created_by_fkey FOREIGN KEY (created_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.delivery_persons
+    ADD CONSTRAINT delivery_persons_last_modified_by_fkey FOREIGN KEY (last_modified_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
 ALTER TABLE IF EXISTS public.food_products
     ADD CONSTRAINT food_product_created_by_fkey FOREIGN KEY (created_by)
     REFERENCES public.users (id) MATCH SIMPLE
@@ -108,6 +266,146 @@ ALTER TABLE IF EXISTS public.food_products
 
 ALTER TABLE IF EXISTS public.food_products
     ADD CONSTRAINT food_product_last_modified_by_fkey FOREIGN KEY (last_modified_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.menu_categories
+    ADD CONSTRAINT menu_categories_created_by_fkey FOREIGN KEY (created_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.menu_categories
+    ADD CONSTRAINT menu_categories_last_modified_by_fkey FOREIGN KEY (last_modified_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.menu_categories
+    ADD CONSTRAINT menu_categories_restaurant_id_fkey FOREIGN KEY (restaurant_id)
+    REFERENCES public.restaurants (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.order_items
+    ADD CONSTRAINT order_items_created_by_fkey FOREIGN KEY (created_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.order_items
+    ADD CONSTRAINT order_items_last_modified_by_fkey FOREIGN KEY (last_modified_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.order_items
+    ADD CONSTRAINT order_items_order_id_fkey FOREIGN KEY (order_id)
+    REFERENCES public.orders (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.order_items
+    ADD CONSTRAINT order_items_product_variant_id_fkey FOREIGN KEY (product_variant_id)
+    REFERENCES public.product_variants (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.orders
+    ADD CONSTRAINT orders_created_by_fkey FOREIGN KEY (created_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.orders
+    ADD CONSTRAINT orders_delivery_person_id_fkey FOREIGN KEY (delivery_person_id)
+    REFERENCES public.delivery_persons (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.orders
+    ADD CONSTRAINT orders_last_modified_by_fkey FOREIGN KEY (last_modified_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.orders
+    ADD CONSTRAINT orders_restaurant_id_fkey FOREIGN KEY (restaurant_id)
+    REFERENCES public.restaurants (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.orders
+    ADD CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.payment_methods
+    ADD CONSTRAINT payment_methods_created_by_fkey FOREIGN KEY (created_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.payment_methods
+    ADD CONSTRAINT payment_methods_last_modified_by_fkey FOREIGN KEY (last_modified_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.payment_methods
+    ADD CONSTRAINT payment_methods_user_id_fkey FOREIGN KEY (user_id)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.payments
+    ADD CONSTRAINT payments_created_by_fkey FOREIGN KEY (created_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.payments
+    ADD CONSTRAINT payments_last_modified_by_fkey FOREIGN KEY (last_modified_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.payments
+    ADD CONSTRAINT payments_order_id_fkey FOREIGN KEY (order_id)
+    REFERENCES public.orders (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.payments
+    ADD CONSTRAINT payments_payment_method_id_fkey FOREIGN KEY (payment_method_id)
+    REFERENCES public.payment_methods (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.payments
+    ADD CONSTRAINT payments_user_id_fkey FOREIGN KEY (user_id)
     REFERENCES public.users (id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION;
@@ -132,6 +430,69 @@ ALTER TABLE IF EXISTS public.product_variants
     REFERENCES public.food_products (id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE CASCADE;
+
+
+ALTER TABLE IF EXISTS public.ratings
+    ADD CONSTRAINT ratings_created_by_fkey FOREIGN KEY (created_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.ratings
+    ADD CONSTRAINT ratings_last_modified_by_fkey FOREIGN KEY (last_modified_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.ratings
+    ADD CONSTRAINT ratings_user_id_fkey FOREIGN KEY (user_id)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.refunds
+    ADD CONSTRAINT refunds_created_by_fkey FOREIGN KEY (created_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.refunds
+    ADD CONSTRAINT refunds_last_modified_by_fkey FOREIGN KEY (last_modified_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.refunds
+    ADD CONSTRAINT refunds_payment_id_fkey FOREIGN KEY (payment_id)
+    REFERENCES public.payments (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.refunds
+    ADD CONSTRAINT refunds_user_id_fkey FOREIGN KEY (user_id)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.restaurants
+    ADD CONSTRAINT restaurants_created_by_fkey FOREIGN KEY (created_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.restaurants
+    ADD CONSTRAINT restaurants_last_modified_by_fkey FOREIGN KEY (last_modified_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
 
 
 ALTER TABLE IF EXISTS public.users

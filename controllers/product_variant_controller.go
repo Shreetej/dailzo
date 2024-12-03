@@ -5,7 +5,6 @@ import (
 	"dailzo/globals"
 	"dailzo/models"
 	"dailzo/repository"
-	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -19,7 +18,6 @@ func NewProductVariantController(repo *repository.ProductVariantRepository) *Pro
 }
 
 func (c *ProductVariantController) CreateProductVariant(ctx *fiber.Ctx) error {
-	fmt.Print("User details:", ctx.Locals("user_id"))
 	var productVariant models.ProductVariant
 	if err := ctx.BodyParser(&productVariant); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid input"})
