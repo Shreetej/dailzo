@@ -46,3 +46,93 @@ func (r *RefundRepository) CreateRefund(ctx context.Context, refund models.Refun
 
 	return id, nil
 }
+func (r *RefundRepository) GetRefundByID(ctx context.Context, id string) (models.Refund, error) {
+	var refund models.Refund
+	query := `SELECT id, payment_id, user_id, amount, reason, status, refund_date, created_on, last_updated_on, created_by, last_modified_by 
+	          FROM refunds WHERE id = $1`
+
+	err := r.db.QueryRow(ctx, query, id).Scan(
+		&refund.ID,
+		&refund.PaymentID,
+		&refund.UserID,
+		&refund.Amount,
+		&refund.Reason,
+		&refund.Status,
+		&refund.RefundDate,
+		&refund.CreatedOn,
+		&refund.LastUpdatedOn,
+		&refund.CreatedBy,
+		&refund.LastModifiedBy,
+	)
+
+	if err != nil {
+		return refund, err
+	}
+
+	return refund, nil
+}
+
+func (r *RefundRepository) GetRefunds(ctx context.Context) ([]models.Refund, error) {
+	var refunds []models.Refund
+	query := `SELECT id, payment_id, user_id, amount, reason, status, refund_date, created_on, last_updated_on, created_by, last_modified_by 
+	          FROM refunds`
+
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var refund models.Refund
+		if err := rows.Scan(
+			&refund.ID,
+			&refund.PaymentID,
+			&refund.UserID,
+			&refund.Amount,
+			&refund.Reason,
+			&refund.Status,
+			&refund.RefundDate,
+			&refund.CreatedOn,
+			&refund.LastUpdatedOn,
+			&refund.CreatedBy,
+			&refund.LastModifiedBy,
+		); err != nil {
+			return nil, err
+		}
+		refunds = append(refunds, refund)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return refunds, nil
+}
+
+func (r *RefundRepository) UpdateRefund(ctx context.Context, refund models.Refund) error {
+	query := `UPDATE refunds
+		SET payment_id = $1, user_id = $2, amount = $3, reason = $4, status = $5, refund_date = $6, 
+		last_updated_on = $7, last_modified_by = $8
+		WHERE id = $9`
+
+	_, err := r.db.Exec(ctx, query,
+		refund.PaymentID,
+		refund.UserID,
+		refund.Amount,
+		refund.Reason,
+		refund.Status,
+		refund.RefundDate,
+		refund.LastUpdatedOn,
+		refund.LastModifiedBy,
+		refund.ID,
+	)
+
+	return err
+}
+
+func (r *RefundRepository) DeleteRefund(ctx context.Context, id string) error {
+	query := `DELETE FROM refunds WHERE id = $1`
+	_, err := r.db.Exec(ctx, query, id)
+	return err
+}

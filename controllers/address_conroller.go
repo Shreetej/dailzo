@@ -30,7 +30,7 @@ func (c *AddressController) CreateAddress(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"id": id})
 }
 
-func (c *AddressController) GetAddress(ctx *fiber.Ctx) error {
+func (c *AddressController) GetAddressById(ctx *fiber.Ctx) error {
 	addressID := ctx.Params("id")
 	address, err := c.repo.GetAddressByID(ctx.Context(), addressID)
 	if err != nil {

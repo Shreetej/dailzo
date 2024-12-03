@@ -30,8 +30,8 @@ func (r *ProductVariantRepository) CreateProductVariant(ctx context.Context, pro
 	err := r.db.QueryRow(ctx, query,
 		id,
 		productVariant.ProductID,             // Product ID (link to the food_product table)
-		productVariant.VariantName,           // Variant name (e.g., "Small", "Medium", "Large")
-		productVariant.AdditionalDescription, // Additional description for the variant (e.g., "Small size, serves 1")
+		productVariant.VariantName,           // Variant variant_name (e.g., "Small", "Medium", "Large")
+		productVariant.AdditionalDescription, // Additional additional_description for the variant (e.g., "Small size, serves 1")
 		productVariant.Price,                 // Price for the variant
 		productVariant.QuantityAvailable,     // Quantity available for this variant
 		productVariant.IsActive,              // Whether the variant is active
@@ -47,4 +47,90 @@ func (r *ProductVariantRepository) CreateProductVariant(ctx context.Context, pro
 	}
 
 	return id, nil
+}
+func (r *ProductVariantRepository) GetProductVariantByID(ctx context.Context, id string) (models.ProductVariant, error) {
+	var productVariant models.ProductVariant
+	query := `SELECT id, product_id, variant_name, additional_description, price, quantity_available, created_on, last_updated_on, created_by, last_modified_by
+	          FROM product_variants WHERE id = $1`
+
+	err := r.db.QueryRow(ctx, query, id).Scan(
+		&productVariant.ID,
+		&productVariant.ProductID,
+		&productVariant.VariantName,
+		&productVariant.AdditionalDescription,
+		&productVariant.Price,
+		&productVariant.QuantityAvailable,
+		&productVariant.CreatedOn,
+		&productVariant.LastUpdatedOn,
+		&productVariant.CreatedBy,
+		&productVariant.LastModifiedBy,
+	)
+
+	if err != nil {
+		return productVariant, err
+	}
+
+	return productVariant, nil
+}
+
+func (r *ProductVariantRepository) GetProductVariants(ctx context.Context) ([]models.ProductVariant, error) {
+	var productVariants []models.ProductVariant
+	query := `SELECT id, product_id, variant_name, additional_description, price, quantity_available, created_on, last_updated_on, created_by, last_modified_by
+	          FROM product_variants`
+
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var productVariant models.ProductVariant
+		if err := rows.Scan(
+			&productVariant.ID,
+			&productVariant.ProductID,
+			&productVariant.VariantName,
+			&productVariant.AdditionalDescription,
+			&productVariant.Price,
+			&productVariant.QuantityAvailable,
+			&productVariant.CreatedOn,
+			&productVariant.LastUpdatedOn,
+			&productVariant.CreatedBy,
+			&productVariant.LastModifiedBy,
+		); err != nil {
+			return nil, err
+		}
+		productVariants = append(productVariants, productVariant)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return productVariants, nil
+}
+
+func (r *ProductVariantRepository) UpdateProductVariant(ctx context.Context, productVariant models.ProductVariant) error {
+	query := `UPDATE product_variants
+		SET product_id = $1, variant_name = $2, additional_description = $3, price = $4, quantity_available = $5, last_updated_on = $6, last_modified_by = $7
+		WHERE id = $8`
+
+	_, err := r.db.Exec(ctx, query,
+		productVariant.ProductID,
+		productVariant.VariantName,
+		productVariant.AdditionalDescription,
+		productVariant.Price,
+		productVariant.QuantityAvailable,
+		productVariant.LastUpdatedOn,
+		productVariant.LastModifiedBy,
+		productVariant.ID,
+	)
+
+	return err
+}
+
+func (r *ProductVariantRepository) DeleteProductVariant(ctx context.Context, id string) error {
+	query := `DELETE FROM product_variants WHERE id = $1`
+	_, err := r.db.Exec(ctx, query, id)
+	return err
 }
