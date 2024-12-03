@@ -2,10 +2,8 @@ package controllers
 
 import (
 	"dailzo/config"
-	"dailzo/globals"
 	"dailzo/models"
 	"dailzo/repository"
-	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -19,20 +17,54 @@ func NewAddressController(repo *repository.AddressRepository) *AddressController
 }
 
 func (c *AddressController) CreateAddress(ctx *fiber.Ctx) error {
-	var addr models.Address
-	if err := ctx.BodyParser(&addr); err != nil {
+	var address models.Address
+	if err := ctx.BodyParser(&address); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid input"})
 	}
-	globals.UpdateUserID(ctx.Locals("user_id").(string))
-	fmt.Print("User details:", ctx.Locals("user_id"))
-	id, err := c.repo.CreateAddress(ctx.Context(), addr)
+	id, err := c.repo.CreateAddress(ctx.Context(), address)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not create user"})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not create address"})
 	}
-
-	// Log user creation
 	log := config.SetupLogger()
 	log.Info().Msgf("Address created with ID: %d", id)
-
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"id": id})
+}
+
+func (c *AddressController) GetAddress(ctx *fiber.Ctx) error {
+	addressID := ctx.Params("id")
+	address, err := c.repo.GetAddressByID(ctx.Context(), addressID)
+	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Address not found"})
+	}
+	return ctx.JSON(address)
+}
+
+func (c *AddressController) GetAddresses(ctx *fiber.Ctx) error {
+	addresses, err := c.repo.GetAddresses(ctx.Context())
+	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "No addresses found"})
+	}
+	return ctx.JSON(addresses)
+}
+
+func (c *AddressController) UpdateAddress(ctx *fiber.Ctx) error {
+	var address models.Address
+	if err := ctx.BodyParser(&address); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid input"})
+	}
+
+	if err := c.repo.UpdateAddress(ctx.Context(), address); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to update address"})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Address updated successfully"})
+}
+
+func (c *AddressController) DeleteAddress(ctx *fiber.Ctx) error {
+	addressID := ctx.Params("id")
+	if err := c.repo.DeleteAddress(ctx.Context(), addressID); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to delete address"})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Address deleted successfully"})
 }
