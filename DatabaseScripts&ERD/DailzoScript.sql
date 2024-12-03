@@ -57,18 +57,6 @@ CREATE TABLE IF NOT EXISTS public.food_products
     CONSTRAINT food_product_pkey PRIMARY KEY (id)
 );
 
-CREATE TABLE IF NOT EXISTS public.menu_categories
-(
-    id character varying COLLATE pg_catalog."default" NOT NULL,
-    restaurant_id character varying COLLATE pg_catalog."default",
-    name text COLLATE pg_catalog."default" NOT NULL,
-    created_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    last_updated_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by character varying COLLATE pg_catalog."default",
-    last_modified_by character varying COLLATE pg_catalog."default",
-    CONSTRAINT menu_categories_pkey PRIMARY KEY (id)
-);
-
 CREATE TABLE IF NOT EXISTS public.order_items
 (
     id character varying COLLATE pg_catalog."default" NOT NULL,
@@ -271,27 +259,6 @@ ALTER TABLE IF EXISTS public.food_products
     ON DELETE NO ACTION;
 
 
-ALTER TABLE IF EXISTS public.menu_categories
-    ADD CONSTRAINT menu_categories_created_by_fkey FOREIGN KEY (created_by)
-    REFERENCES public.users (id) MATCH SIMPLE
-    ON UPDATE NO ACTION
-    ON DELETE NO ACTION;
-
-
-ALTER TABLE IF EXISTS public.menu_categories
-    ADD CONSTRAINT menu_categories_last_modified_by_fkey FOREIGN KEY (last_modified_by)
-    REFERENCES public.users (id) MATCH SIMPLE
-    ON UPDATE NO ACTION
-    ON DELETE NO ACTION;
-
-
-ALTER TABLE IF EXISTS public.menu_categories
-    ADD CONSTRAINT menu_categories_restaurant_id_fkey FOREIGN KEY (restaurant_id)
-    REFERENCES public.restaurants (id) MATCH SIMPLE
-    ON UPDATE NO ACTION
-    ON DELETE NO ACTION;
-
-
 ALTER TABLE IF EXISTS public.order_items
     ADD CONSTRAINT order_items_created_by_fkey FOREIGN KEY (created_by)
     REFERENCES public.users (id) MATCH SIMPLE
@@ -329,7 +296,7 @@ ALTER TABLE IF EXISTS public.orders
 
 ALTER TABLE IF EXISTS public.orders
     ADD CONSTRAINT orders_delivery_person_id_fkey FOREIGN KEY (delivery_person_id)
-    REFERENCES public.delivery_persons (id) MATCH SIMPLE
+    REFERENCES public.users (id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION;
 
