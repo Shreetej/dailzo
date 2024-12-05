@@ -453,7 +453,9 @@ ALTER TABLE IF EXISTS public.users
 FROM
 	INFORMATION_SCHEMA.CHECK_CONSTRAINTS
 WHERE
-	CONSTRAINT_NAME = 'payment_methods_type_check';
+	CONSTRAINT_NAME = 'refunds_status_check';
+
+	
 */
 
 
