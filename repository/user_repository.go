@@ -103,10 +103,10 @@ func (r *UserRepository) UpdateUser(ctx context.Context, user models.User) error
 	_, err = r.db.Exec(ctx, query, user.FirstName, user.Email, user.MobileNo, string(hashedPassword), time.Now(), user.LastName, user.MiddleName, UserName)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			//return nil, errors.New("user not found")
+			return errors.New("user not found")
 		}
 		fmt.Printf("Error executing query: %v\n", err)
-		//return nil, err
+		return err
 	}
 	return err
 }

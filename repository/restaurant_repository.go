@@ -124,8 +124,8 @@ func (r *RestaurantRepository) UpdateRestaurant(ctx context.Context, restaurant 
 		restaurant.Email,
 		restaurant.OpeningTime,
 		restaurant.ClosingTime,
-		restaurant.LastUpdatedOn,
-		restaurant.LastModifiedBy,
+		time.Now(),
+		globals.GetLoogedInUserId(),
 		restaurant.ID,
 	)
 

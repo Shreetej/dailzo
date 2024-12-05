@@ -72,16 +72,14 @@ func SetupRoutes(
 	api.Delete("/productvariant/:id", middleware.JWTMiddleware(), productVariantController.DeleteProductVariant)
 	api.Get("/productvariants", middleware.JWTMiddleware(), productVariantController.GetProductVariants)
 
-	// Payment routes
-	api.Post("/payment", middleware.JWTMiddleware(), paymentController.CreatePayment)
-	api.Get("/payment/:id", middleware.JWTMiddleware(), paymentController.GetPayment)
-	api.Put("/payment/:id", middleware.JWTMiddleware(), paymentController.UpdatePayment)
-	api.Delete("/payment/:id", middleware.JWTMiddleware(), paymentController.DeletePayment)
-	api.Get("/payments", middleware.JWTMiddleware(), paymentController.GetPayments)
-	// api.Get("/payments/user/:userId", middleware.JWTMiddleware(), paymentController.GetPaymentsByUserId)
-	// api.Get("/payments/order/:orderId", middleware.JWTMiddleware(), paymentController.GetPaymentsByOrderId)
-	// api.Get("/payments/status/:status", middleware.JWTMiddleware(), paymentController.GetPaymentsByStatus)
-	// api.Get("/payments/count", middleware.JWTMiddleware(), paymentController.CountPayments)
+	// Restaurant routes
+	api.Post("/restaurant", middleware.JWTMiddleware(), restaurantController.CreateRestaurant)
+	api.Get("/restaurant/:id", middleware.JWTMiddleware(), restaurantController.GetRestaurant)
+	api.Put("/restaurant/:id", middleware.JWTMiddleware(), restaurantController.UpdateRestaurant)
+	api.Delete("/restaurant/:id", middleware.JWTMiddleware(), restaurantController.DeleteRestaurant)
+	api.Get("/restaurants", middleware.JWTMiddleware(), restaurantController.GetRestaurants)
+	// api.Get("/restaurants/city/:city", middleware.JWTMiddleware(), restaurantController.GetRestaurantsByCity)
+	// api.Get("/restaurants/cuisine/:cuisine", middleware.JWTMiddleware(), restaurantController.GetRestaurantsByCuisine)
 
 	// Order routes
 	api.Post("/order", middleware.JWTMiddleware(), orderController.CreateOrder)
@@ -121,12 +119,14 @@ func SetupRoutes(
 	api.Get("/refunds", middleware.JWTMiddleware(), refundController.GetRefunds)
 	//api.Get("/refunds/order/:orderId", middleware.JWTMiddleware(), refundController.GetRefundsByOrderId)
 
-	// Restaurant routes
-	api.Post("/restaurant", middleware.JWTMiddleware(), restaurantController.CreateRestaurant)
-	api.Get("/restaurant/:id", middleware.JWTMiddleware(), restaurantController.GetRestaurant)
-	api.Put("/restaurant/:id", middleware.JWTMiddleware(), restaurantController.UpdateRestaurant)
-	api.Delete("/restaurant/:id", middleware.JWTMiddleware(), restaurantController.DeleteRestaurant)
-	api.Get("/restaurants", middleware.JWTMiddleware(), restaurantController.GetRestaurants)
-	// api.Get("/restaurants/city/:city", middleware.JWTMiddleware(), restaurantController.GetRestaurantsByCity)
-	// api.Get("/restaurants/cuisine/:cuisine", middleware.JWTMiddleware(), restaurantController.GetRestaurantsByCuisine)
+	// Payment routes
+	api.Post("/payment", middleware.JWTMiddleware(), paymentController.CreatePayment)
+	api.Get("/payment/:id", middleware.JWTMiddleware(), paymentController.GetPayment)
+	api.Put("/payment/:id", middleware.JWTMiddleware(), paymentController.UpdatePayment)
+	api.Delete("/payment/:id", middleware.JWTMiddleware(), paymentController.DeletePayment)
+	api.Get("/payments", middleware.JWTMiddleware(), paymentController.GetPayments)
+	// api.Get("/payments/user/:userId", middleware.JWTMiddleware(), paymentController.GetPaymentsByUserId)
+	// api.Get("/payments/order/:orderId", middleware.JWTMiddleware(), paymentController.GetPaymentsByOrderId)
+	// api.Get("/payments/status/:status", middleware.JWTMiddleware(), paymentController.GetPaymentsByStatus)
+	// api.Get("/payments/count", middleware.JWTMiddleware(), paymentController.CountPayments)
 }

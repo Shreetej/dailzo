@@ -23,7 +23,7 @@ func NewAddressRepository(db *pgxpool.Pool) *AddressRepository {
 func (r *AddressRepository) CreateAddress(ctx context.Context, address models.Address) (string, error) {
 	// Generate unique ID for the address
 	id := GetIdToRecord("ADDRS")
-
+	println(globals.GetLoogedInUserId())
 	// Prepare the query
 	query := `INSERT INTO addresses 
 		(id, address_line_1, address_line_2, address_line_3, zip_pin, benchmark, user_id, city, state, type, longitude, latitude, created_on, last_updated_on, created_by, last_modified_by, mobileno, name)
@@ -76,47 +76,12 @@ func (r *AddressRepository) GetAddresses(ctx context.Context) ([]models.DisplayA
 		return nil, err
 	}
 	return addresses, nil
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// defer rows.Close()
-
-	// for rows.Next() {
-	// 	var address models.Address
-	// 	if err := rows.Scan(
-	// 		&address.ID,
-	// 		&address.AddressLine1,
-	// 		&address.AddressLine2,
-	// 		&address.AddressLine3,
-	// 		&address.ZIPPin,
-	// 		&address.Benchmark,
-	// 		&address.UserID,
-	// 		&address.City,
-	// 		&address.State,
-	// 		&address.Type,
-	// 		&address.Longitude,
-	// 		&address.Latitude,
-	// 		&address.CreatedOn,
-	// 		&address.LastUpdatedOn,
-	// 		&address.CreatedBy,
-	// 		&address.LastModifiedBy,
-	// 		&address.MobileNo,
-	// 		&address.Name,
-	// 	); err != nil {
-	// 		return nil, err
-	// 	}
-	// 	addresses = append(addresses, address)
-	// }
-	// if err := rows.Err(); err != nil {
-	// 	return nil, err
-	// }
-
-	// return addresses, nil
 }
 
 func (r *AddressRepository) GetAddressByID(ctx context.Context, id string) (models.Address, error) {
 	var address models.Address
-	query := `SELECT id, address_line_1, address_line_2, address_line_3, zip_pin, benchmark, user_id, city, state, type, longitude, latitude, created_on, last_updated_on, created_by, last_modified_by, mobileno, name 
+	println("id_______", id)
+	query := `SELECT id, address_line_1, address_line_2, address_line_3, zip_pin, benchmark, user_id, city, state, type, longitude, latitude, mobileno, name 
 	          FROM addresses WHERE id = $1`
 
 	err := r.db.QueryRow(ctx, query, id).Scan(
@@ -132,15 +97,13 @@ func (r *AddressRepository) GetAddressByID(ctx context.Context, id string) (mode
 		&address.Type,
 		&address.Longitude,
 		&address.Latitude,
-		&address.CreatedOn,
-		&address.LastUpdatedOn,
-		&address.CreatedBy,
-		&address.LastModifiedBy,
 		&address.MobileNo,
 		&address.Name,
 	)
 
 	if err != nil {
+		fmt.Println("Addresses : ", address)
+		fmt.Println("err : ", err)
 		return address, err
 	}
 

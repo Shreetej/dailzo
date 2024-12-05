@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"dailzo/globals"
 	"dailzo/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -21,6 +22,7 @@ func JWTMiddleware() fiber.Handler {
 
 		// Attach user ID to the context
 		c.Locals("user_id", claims["sub"])
+		globals.UpdateUserID(claims["sub"].(string))
 		return c.Next()
 	}
 }

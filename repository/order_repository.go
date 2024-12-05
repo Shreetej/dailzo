@@ -4,8 +4,11 @@ import (
 	"context"
 	"dailzo/globals"
 	"dailzo/models"
+	"errors"
+	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -40,11 +43,14 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order models.Order) (
 		globals.GetLoogedInUserId(), // Assuming a function for getting logged-in user ID
 		globals.GetLoogedInUserId(),
 	).Scan(&order.ID)
+	println("order.Status, :", order.Status)
 
 	if err != nil {
+		println("Error in query:", err)
 		println("Error in query:", err.Error())
 		return "", err
 	}
+	println("Error in query:", id)
 
 	return id, nil
 }
@@ -79,56 +85,113 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, id string) (*models.
 }
 
 // GetOrderByID retrieves an order by its ID
-func (r *OrderRepository) GetOrders(ctx context.Context) (*models.Order, error) {
+func (r *OrderRepository) GetOrders(ctx context.Context) ([]models.Order, error) {
 	query := `SELECT id, user_id, restaurant_id, status, total_amount, order_date, delivery_person_id, created_on, last_updated_on, created_by, last_modified_by
 		FROM orders`
 
-	var order models.Order
-	err := r.db.QueryRow(ctx, query).Scan(
-		&order.ID,
-		&order.UserID,
-		&order.RestaurantID,
-		&order.Status,
-		&order.TotalAmount,
-		&order.OrderDate,
-		&order.DeliveryPersonID,
-		&order.CreatedOn,
-		&order.LastUpdatedOn,
-		&order.CreatedBy,
-		&order.LastModifiedBy,
-	)
+	rows, err := r.db.Query(ctx, query)
+	var orders []models.Order
+
+	if err == pgx.ErrNoRows {
+		return nil, errors.New("no orders found")
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var order models.Order
+		if err := rows.Scan(
+			&order.ID,
+			&order.UserID,
+			&order.RestaurantID,
+			&order.Status,
+			&order.TotalAmount,
+			&order.OrderDate,
+			&order.DeliveryPersonID,
+			&order.CreatedOn,
+			&order.LastUpdatedOn,
+			&order.CreatedBy,
+			&order.LastModifiedBy,
+		); err != nil {
+			return nil, err
+		}
+
+		orders = append(orders, order)
+	}
 
 	if err != nil {
 		println("Error in query:", err.Error())
 		return nil, err
 	}
 
-	return &order, nil
+	return orders, nil
 }
 
 // UpdateOrder updates an existing order in the database
-func (r *OrderRepository) UpdateOrder(ctx context.Context, order models.Order) error {
-	query := `UPDATE orders 
-		SET user_id = $1, restaurant_id = $2, status = $3, total_amount = $4, order_date = $5, delivery_person_id = $6, last_updated_on = $7, last_modified_by = $8
-		WHERE id = $9`
+// func (r *OrderRepository) UpdateOrder(ctx context.Context, order models.Order) error {
+// 	query := `UPDATE orders
+// 		SET user_id = $1, restaurant_id = $2, status = $3, total_amount = $4,  delivery_person_id = $5, last_updated_on = $6, last_modified_by = $7
+// 		WHERE id = $8`
 
-	_, err := r.db.Exec(ctx, query,
+// 	_, err := r.db.Exec(ctx, query,
+// 		order.UserID,
+// 		order.RestaurantID,
+// 		order.Status,
+// 		order.TotalAmount,
+// 		order.DeliveryPersonID,
+// 		time.Now(),
+// 		globals.GetLoogedInUserId(),
+// 		order.ID,
+// 	)
+// 	println("Error in query:", err.Error())
+// 	if err != nil {
+// 		println("Error in query:", err.Error())
+// 		return err
+// 	}
+
+// 	return nil
+// }
+
+func (r *OrderRepository) UpdateOrder(ctx context.Context, order models.Order) error {
+	// Validate that the required fields are provided
+	if order.ID == "" {
+		return fmt.Errorf("order ID cannot be empty")
+	}
+	if order.Status == "" {
+		return fmt.Errorf("order status cannot be empty")
+	}
+
+	// Define the SQL update query
+	query := `UPDATE orders 
+		SET user_id = $1, restaurant_id = $2, status = $3, total_amount = $4, 
+			delivery_person_id = $5, last_updated_on = $6, last_modified_by = $7
+		WHERE id = $8`
+
+	// Execute the update query
+	result, err := r.db.Exec(ctx, query,
 		order.UserID,
 		order.RestaurantID,
 		order.Status,
 		order.TotalAmount,
-		order.OrderDate,
 		order.DeliveryPersonID,
 		time.Now(),
 		globals.GetLoogedInUserId(),
 		order.ID,
 	)
 
+	// Check for errors in the query execution
 	if err != nil {
-		println("Error in query:", err.Error())
-		return err
+		// Log the error for debugging
+		println("Error executing query:", err.Error())
+		return fmt.Errorf("failed to update order: %w", err)
 	}
 
+	// Check if any rows were affected by the update
+	rowsAffected := result.RowsAffected()
+	if rowsAffected == 0 {
+		// If no rows were affected, it means the order with the provided ID was not found
+		return fmt.Errorf("no order found with ID %s", order.ID)
+	}
+
+	// Successful update
 	return nil
 }
 

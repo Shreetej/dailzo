@@ -121,8 +121,8 @@ func (r *ProductVariantRepository) UpdateProductVariant(ctx context.Context, pro
 		productVariant.AdditionalDescription,
 		productVariant.Price,
 		productVariant.QuantityAvailable,
-		productVariant.LastUpdatedOn,
-		productVariant.LastModifiedBy,
+		time.Now(),
+		globals.GetLoogedInUserId(),
 		productVariant.ID,
 	)
 

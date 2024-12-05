@@ -4,6 +4,7 @@ import (
 	"context"
 	"dailzo/globals"
 	"dailzo/models"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -40,7 +41,7 @@ func (r *FoodProductRepository) CreateFoodProduct(ctx context.Context, foodProdu
 		globals.GetLoogedInUserId(),
 		globals.GetLoogedInUserId(),
 	).Scan(&foodProduct.ID)
-
+	println("User in query :", globals.GetLoogedInUserId())
 	if err != nil {
 		println("Error in query :", err.Error())
 		return " ", err
@@ -51,7 +52,7 @@ func (r *FoodProductRepository) CreateFoodProduct(ctx context.Context, foodProdu
 
 func (r *FoodProductRepository) GetFoodProductByID(ctx context.Context, id string) (models.FoodProduct, error) {
 	var foodProduct models.FoodProduct
-	query := `SELECT id, name, description, price, category_id, created_on, last_updated_on, created_by, last_modified_by 
+	query := `SELECT id, name, description, price, category, created_by, last_modified_by 
 	          FROM food_products WHERE id = $1`
 
 	err := r.db.QueryRow(ctx, query, id).Scan(
@@ -60,8 +61,6 @@ func (r *FoodProductRepository) GetFoodProductByID(ctx context.Context, id strin
 		&foodProduct.Description,
 		&foodProduct.Price,
 		&foodProduct.Category,
-		&foodProduct.CreatedOn,
-		&foodProduct.LastUpdatedOn,
 		&foodProduct.CreatedBy,
 		&foodProduct.LastModifiedBy,
 	)
@@ -75,15 +74,15 @@ func (r *FoodProductRepository) GetFoodProductByID(ctx context.Context, id strin
 
 func (r *FoodProductRepository) GetFoodProducts(ctx context.Context) ([]models.FoodProduct, error) {
 	var foodProducts []models.FoodProduct
-	query := `SELECT id, name, description, price, category_id, created_on, last_updated_on, created_by, last_modified_by 
+	query := `SELECT id, name, description, price, category, created_by, last_modified_by 
 	          FROM food_products`
 
 	rows, err := r.db.Query(ctx, query)
 	if err != nil {
+		println("err :", err)
 		return nil, err
 	}
 	defer rows.Close()
-
 	for rows.Next() {
 		var foodProduct models.FoodProduct
 		if err := rows.Scan(
@@ -92,8 +91,6 @@ func (r *FoodProductRepository) GetFoodProducts(ctx context.Context) ([]models.F
 			&foodProduct.Description,
 			&foodProduct.Price,
 			&foodProduct.Category,
-			&foodProduct.CreatedOn,
-			&foodProduct.LastUpdatedOn,
 			&foodProduct.CreatedBy,
 			&foodProduct.LastModifiedBy,
 		); err != nil {
@@ -111,19 +108,33 @@ func (r *FoodProductRepository) GetFoodProducts(ctx context.Context) ([]models.F
 
 func (r *FoodProductRepository) UpdateFoodProduct(ctx context.Context, foodProduct models.FoodProduct) error {
 	query := `UPDATE food_products
-		SET name = $1, description = $2, price = $3, category_id = $4, last_updated_on = $5, last_modified_by = $6
-		WHERE id = $7`
+		SET name = $1, description = $2,  price = $3, category = $4, last_updated_on = $5, last_modified_by = $6, type = $7,image_url = $8, is_active = $9
+		WHERE id = $10`
+	println("foodProduct.Type :", foodProduct.Type)
 
-	_, err := r.db.Exec(ctx, query,
+	result, err := r.db.Exec(ctx, query,
 		foodProduct.Name,
 		foodProduct.Description,
 		foodProduct.Price,
 		foodProduct.Category,
-		foodProduct.LastUpdatedOn,
-		foodProduct.LastModifiedBy,
+		time.Now(),
+		globals.GetLoogedInUserId(),
+		foodProduct.Type,
+		foodProduct.ImageURL,
+		foodProduct.IsActive,
 		foodProduct.ID,
 	)
+	fmt.Println("foodProduct.Type :", foodProduct.ID)
 
+	if err != nil {
+		println("err :", err)
+		return err
+	}
+	rowsAffected := result.RowsAffected()
+	fmt.Printf("Rows affected: %d\n", rowsAffected)
+	if rowsAffected == 0 {
+		fmt.Println("No rows updated. Check the WHERE clause or input data.")
+	}
 	return err
 }
 

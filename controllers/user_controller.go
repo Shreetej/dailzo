@@ -7,7 +7,6 @@ import (
 	"dailzo/repository"
 	"dailzo/utils"
 	"fmt"
-	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
@@ -87,12 +86,12 @@ func (c *UserController) GetUser(ctx *fiber.Ctx) error {
 
 func (c *UserController) GetUserById(ctx *fiber.Ctx) error {
 	userID := ctx.Params("id")
-	id, err := strconv.Atoi(userID)
-	if err != nil {
+	fmt.Println("UserId: ", userID)
+	if userID == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Error in Id"})
 	}
 	fmt.Println("UserId: ", userID)
-	user, err := c.repo.GetUserByID(ctx.Context(), string(id))
+	user, err := c.repo.GetUserByID(ctx.Context(), string(userID))
 	if err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}

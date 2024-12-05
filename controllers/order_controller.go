@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"fmt"
+
 	"dailzo/config"
 	"dailzo/models"
 	"dailzo/repository"
@@ -55,18 +57,62 @@ func (c *OrderController) GetOrders(ctx *fiber.Ctx) error {
 	return ctx.JSON(orders)
 }
 
+// func (c *OrderController) UpdateOrder(ctx *fiber.Ctx) error {
+// 	var order models.Order
+// 	fmt.Print("Error in query:___123__", order)
+// 	// Parse request body
+// 	if err := ctx.BodyParser(&order); err != nil {
+// 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+// 			"error": "Invalid input",
+// 		})
+// 	}
+
+// 	// Update order in the database
+// 	if err := c.repo.UpdateOrder(ctx.Context(), order); err != nil {
+// 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+// 			"error": "Failed to update order",
+// 		})
+// 	}
+
+// 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+// 		"message": "Order updated successfully",
+// 	})
+// }
+
 func (c *OrderController) UpdateOrder(ctx *fiber.Ctx) error {
 	var order models.Order
 
+	// Debugging: Print the order before parsing
+	fmt.Println("Error in query:___123__", order)
+
 	// Parse request body
 	if err := ctx.BodyParser(&order); err != nil {
+		// Handle error if body parsing fails
+		fmt.Println("Error parsing body:", err)
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid input",
 		})
 	}
 
+	// Debugging: Log parsed order
+	fmt.Printf("Received order: %+v\n", order)
+
+	// Ensure that essential fields are present
+	if order.ID == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Order ID is required",
+		})
+	}
+	if order.Status == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Order status is required",
+		})
+	}
+
 	// Update order in the database
 	if err := c.repo.UpdateOrder(ctx.Context(), order); err != nil {
+		// Handle repository error
+		fmt.Println("Error updating order:", err)
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update order",
 		})
