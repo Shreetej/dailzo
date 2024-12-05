@@ -35,6 +35,7 @@ func (r *RefundRepository) CreateRefund(ctx context.Context, refund models.Refun
 		refund.Status,
 		time.Now(),
 		time.Now(),
+		time.Now(),
 		globals.GetLoogedInUserId(),
 		globals.GetLoogedInUserId(),
 	).Scan(&refund.ID)

@@ -16,7 +16,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"first_name\":\"Nitin\",\r\n    \"last_name\":\"Ghuge\",\r\n    \"middle_name\":\"\",\r\n    \"email\":\"nghuge4@gmail.com\",\r\n    \"mobileno\":\"9423769918\",\r\n    \"password\":\"Nitin\"\r\n}",
+							"raw": "{\r\n    \"first_name\":\"First\",\r\n    \"last_name\":\"Last\",\r\n    \"middle_name\":\"Middle\",\r\n    \"email\":\"first@gmail.com\",\r\n    \"mobileno\":\"9423769918\",\r\n    \"password\":\"first\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -40,7 +40,7 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
+								"value": "{{token}}",
 								"type": "text"
 							}
 						],
@@ -53,7 +53,24 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/users/3"
+						"url": {
+							"raw": "localhost:3000/api/users/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"users",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "USR1733148693"
+								}
+							]
+						}
 					},
 					"response": []
 				},
@@ -64,13 +81,13 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzMyNDExNjYsImlhdCI6MTczMzE1NDc2Niwic3ViIjoiVVNSMTczMzE0ODY5MyJ9.L-B_Z1kJj-TP2JJj7oDQ76YabkfNtZU_3AVpbmWRLhs",
+								"value": "{{token}}",
 								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n   \"first_name\":\"Nitin\",\r\n    \"last_name\":\"Ghuge\",\r\n    \"middle_name\":\"Pandhari\",\r\n    \"email\":\"nghuge4@gmail.com\",\r\n    \"mobileno\":\"9423769918\",\r\n    \"password\":\"Nitin\"\r\n}",
+							"raw": "{\r\n   \"first_name\":\"Nitin\",\r\n    \"last_name\":\"Ghuge\",\r\n    \"middle_name\":\"Pandhari\",\r\n    \"email\":\"nghuge4@gmail.com\",\r\n    \"mobileno\":\"7887778577\",\r\n    \"password\":\"Nitin\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -91,7 +108,7 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzMzMzc3MzksImlhdCI6MTczMzI1MTMzOSwic3ViIjoiVVNSMTczMzE0ODY5MyJ9.WtL42iYIgBDYJ81zYy_lH7imhCtle_2emYIX4jCVx34",
+								"value": "{{token}}",
 								"type": "text"
 							}
 						],
@@ -115,7 +132,7 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
+								"value": "{{token}}",
 								"type": "text"
 							}
 						],
@@ -128,7 +145,24 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/users/7"
+						"url": {
+							"raw": "localhost:3000/api/users/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"users",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "USR1733408879"
+								}
+							]
+						}
 					},
 					"response": []
 				},
@@ -162,13 +196,13 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": " eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzMyNDExNjYsImlhdCI6MTczMzE1NDc2Niwic3ViIjoiVVNSMTczMzE0ODY5MyJ9.L-B_Z1kJj-TP2JJj7oDQ76YabkfNtZU_3AVpbmWRLhs",
+								"value": "{{token}}",
 								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"address_line_1\": \"123 Main St\",\r\n  \"address_line_2\": \"Apt 4B\",\r\n  \"address_line_3\": null,\r\n  \"zip_pin\": \"123456\",\r\n  \"benchmark\": \"Near school\",\r\n  //\"user_id\": \"67890\",\r\n  \"city\": \"Springfield\",\r\n  \"state\": \"Illinois\",\r\n  \"type\": \"Home\",\r\n  \"longitude\": -89.6500,\r\n  \"latitude\": 49.8000,\r\n  \"mobileno\": \"788777577\",\r\n  \"name\": \"Second Address 2\"\r\n}",
+							"raw": "{\r\n  \"address_line_1\": \"Patrna\",\r\n  \"address_line_2\": \"Apt 4B\",\r\n  \"address_line_3\": null,\r\n  \"zip_pin\": \"123456\",\r\n  \"benchmark\": \"Near school\",\r\n  \"city\": \"Springfield\",\r\n  \"state\": \"Illinois\",\r\n  \"type\": \"Home\",\r\n  \"longitude\": -89.6500,\r\n  \"latitude\": 49.8000,\r\n  \"mobileno\": \"9876543210\",\r\n  \"name\": \"Second Address 2\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -189,7 +223,7 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzI3NzgwNzQsImlhdCI6MTczMjY5MTY3NCwic3ViIjo0fQ.lqFnn38OB_6JA8bOOnbxg6I0jfKdXTl1Y6SRgWYCn8o",
+								"value": "{{token}}",
 								"type": "text"
 							}
 						],
@@ -202,7 +236,1225 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/users"
+						"url": "localhost:3000/api/address"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Address",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/address/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"address",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "ADDRS1733409437"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Address",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/address/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"address",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "ADDRS1733409437"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Address",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\": \"ADDRS1733409437\",\r\n    \"name\": \"Second Address 2\",\r\n    \"address_line_1\": \"Patrna\",\r\n    \"address_line_2\": \"Apt 4B\",\r\n    \"address_line_3\": \"Address 3\",\r\n    \"zip_pin\": \"123456\",\r\n    \"benchmark\": \"Near school\",\r\n    \"user_id\": \"USR1733148693\",\r\n    \"city\": \"Springfield\",\r\n    \"state\": \"Illinois\",\r\n    \"type\": \"Home\",\r\n    \"mobileno\": \"9876543210\",\r\n    \"longitude\": -89.65,\r\n    \"latitude\": 49.8,\r\n    \"created_on\": \"\",\r\n    \"last_updated_on\": \"\",\r\n    \"created_by\": null,\r\n    \"last_modified_by\": null\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/address/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"address",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "ADDRS1733409437"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Payment",
+			"item": [
+				{
+					"name": "Create Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"order_id\": \"ORDR1733418654\",\r\n  \"user_id\": \"USR1733148693\",\r\n  \"payment_method_id\": \"PAYMTD1733422415\",\r\n  \"amount\": 99.99,\r\n  \"status\": \"success\",\r\n  \"transaction_id\": \"txn004\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/payment"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payments",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/payments"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/payment/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"payment",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "PYMT1733424318"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete payment",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/payment/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"payment",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "PYMT1733424318"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Address",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n        \"id\": \"PYMT1733424256\",\r\n        \"order_id\": \"ORDR1733417881\",\r\n        \"user_id\": \"USR1733148693\",\r\n        \"payment_method_id\": \"PAYMTD1733422415\",\r\n        \"amount\": 109.99,\r\n        \"status\": \"success\",\r\n        \"transaction_id\": \"txn003\",\r\n        \"payment_date\": \"2024-12-06T00:14:16.269696Z\",\r\n        \"created_on\": \"2024-12-06T00:14:16.269696Z\",\r\n        \"last_updated_on\": \"2024-12-06T00:14:16.269696Z\",\r\n        \"created_by\": \"USR1733148693\",\r\n        \"last_modified_by\": \"USR1733148693\"\r\n    }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/payment/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"payment",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "PYMT1733424256"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Payment Method",
+			"item": [
+				{
+					"name": "Create Payment Method",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"user_id\": \"USR1733148693\",\r\n  \"type\": \"debit_card\",\r\n  \"provider\": \"Visa\",\r\n  \"account_number\": \"4111111111111112\",\r\n  \"expiry_date\": \"2028-12-01T08:00:00Z\",\r\n  \"is_default\": false,\r\n  \"name_on_card\": \"John Doe\",\r\n  \"cvv_encrypted\": \"encryptedCVV1234\",\r\n  \"bank_name\": \"Bank of Example\",\r\n  \"ifsc_code\": \"EXAMP000001\",\r\n  \"account_holder_name\": \"John Doe\",\r\n  \"is_active\": true,\r\n  \"card_type\": \"debit\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/paymethod"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment Methods",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/paymethods"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment Method",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/paymethod/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"paymethod",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "PAYMTD1733422415"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Payment Method",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/paymethod/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"paymethod",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "PAYMTD1733422131"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Payment Method",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n        \"id\": \"PAYMTD1733422174\",\r\n        \"user_id\": \"USR1733148693\",\r\n        \"type\": \"debit_card\",\r\n        \"provider\": \"Visa\",\r\n        \"account_number\": \"411155555555555\",\r\n        \"expiry_date\": \"0001-01-01T00:00:00Z\",\r\n        \"is_default\": false,\r\n        \"created_on\": \"2024-12-05T23:39:34.84244Z\",\r\n        \"last_updated_on\": \"2024-12-05T23:39:34.84244Z\",\r\n        \"created_by\": \"USR1733148693\",\r\n        \"last_modified_by\": \"USR1733148693\",\r\n        \"is_active\": true\r\n    }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/paymethod/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"paymethod",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "PAYMTD1733422415"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Order",
+			"item": [
+				{
+					"name": "Create Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"user_id\": \"USR1733148693\",\r\n  \"restaurant_id\": \"REST1733253623\",\r\n  \"status\": \"pending\",\r\n  \"total_amount\": 250.75,\r\n  \"delivery_person_id\": \"USR1733148693\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/order"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Orders",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/orders"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Order",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/order/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"order",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "ORDR1733417031"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Order",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/order/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"order",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "ORDR1733417031"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Order",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":\"ORDR1733418654\",\r\n  \"user_id\": \"USR1733148693\",\r\n  \"restaurant_id\": \"REST1733253623\",\r\n  \"status\": \"in_progress\",\r\n  \"total_amount\": 253.75,\r\n  \"delivery_person_id\": \"USR1733148693\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/order/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"order",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "ORDR1733417029"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Rating",
+			"item": [
+				{
+					"name": "Create Rating",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"rating\": 3,\r\n  \"comment\": \"Excellent service, highly recommend!\",\r\n  \"user_id\": \"USR1733148693\",\r\n  \"entity_type\": \"restaurant\",\r\n  \"entity_id\": \"REST1733253623\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/rating"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Ratings",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/ratings"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Rating",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/rating/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"rating",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "RTNG1733423179"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Rating",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/rating/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"rating",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "RTNG1733423179"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Rating",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n \"id\": \"RTNG1733423190\",\r\n  \"rating\": 3,\r\n  \"comment\": \"Good service, highly recommend!\",\r\n  \"user_id\": \"USR1733148693\",\r\n  \"entity_type\": \"restaurant\",\r\n  \"entity_id\": \"REST1733253623\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/rating/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"rating",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "RTNG1733423190"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Refund",
+			"item": [
+				{
+					"name": "Create Refund",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"payment_id\": \"PYMT1733424256\",\r\n  \"user_id\": \"USR1733148693\",\r\n  \"amount\": 100.00,\r\n  \"reason\": \"Product returned\",\r\n  \"status\": \"initiated\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/refund"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Refunds",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/refunds"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Refund",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/refund/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"refund",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "RFND1733424680"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Refund",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/rating/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"rating",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "RTNG1733423179"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Rating",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\": \"RFND1733424680\",\r\n    \"payment_id\": \"PYMT1733424256\",\r\n    \"user_id\": \"USR1733148693\",\r\n    \"amount\": 100,\r\n    \"reason\": \"Product \",\r\n    \"status\": \"completed\",\r\n    \"refund_date\": \"2024-12-06T00:21:20.602388Z\",\r\n    \"created_on\": \"2024-12-06T00:21:20.602388Z\",\r\n    \"last_updated_on\": \"2024-12-06T00:21:20.602388Z\",\r\n    \"created_by\": \"USR1733148693\",\r\n    \"last_modified_by\": \"USR1733148693\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/refund/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"refund",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "RFND1733424680"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Order Item",
+			"item": [
+				{
+					"name": "Create OrderItem",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"order_id\": \"ORDR1733419459\",\r\n  \"product_variant_id\": \"PRODV1733168034\",\r\n  \"quantity\": 2,\r\n  \"price\": 29.99\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/orderitem"
+					},
+					"response": []
+				},
+				{
+					"name": "Get OrdersItems",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/orderitems"
+					},
+					"response": []
+				},
+				{
+					"name": "Get OrderItem",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/orderitem/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"orderitem",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "ORDITM1733419573"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete OrderItem",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/orderItem/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"orderItem",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "ORDITM1733419573"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update OrderItem",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\": \"ORDITM1733419576\",\r\n  \"order_id\": \"ORDR1733419459\",\r\n  \"product_variant_id\": \"PRODV1733168034\",\r\n  \"quantity\": 3,\r\n  \"price\": 29.99\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/orderitem/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"orderitem",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "ORDITM1733419567"
+								}
+							]
+						}
 					},
 					"response": []
 				}
@@ -218,13 +1470,13 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": " eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzMyNDExNjYsImlhdCI6MTczMzE1NDc2Niwic3ViIjoiVVNSMTczMzE0ODY5MyJ9.L-B_Z1kJj-TP2JJj7oDQ76YabkfNtZU_3AVpbmWRLhs",
+								"value": "{{token}}",
 								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"name\": \"Veg Pizza\",\r\n  \"description\": \"A delicious vegetarian pizza with fresh ingredients.\",\r\n  \"category\": \"Pizza\",\r\n  \"type\": \"Veg\",\r\n  \"price\": 12.99,\r\n  \"image_url\": \"https://example.com/images/veg_pizza.jpg\",\r\n  \"is_active\": true\r\n}\r\n",
+							"raw": "{\r\n  \"name\": \"Mutton Pizza\",\r\n  \"description\": \"A delicious vegetarian pizza with fresh ingredients.\",\r\n  \"category\": \"Pizza\",\r\n  \"type\": \"Non-Veg\",\r\n  \"price\": 12.99,\r\n  \"image_url\": \"https://example.com/images/veg_pizza.jpg\",\r\n  \"is_active\": true\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -232,6 +1484,159 @@
 							}
 						},
 						"url": "localhost:3000/api/foodproduct"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Food Products",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/foodproducts"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Food Product",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/foodproduct/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"foodproduct",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "FPROD1733412023"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Food Product",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":4,\r\n    \"name\":\"shreetej\",\r\n    \"email\":\"shreetejghodekar@gmail.com\",\r\n    \"mobileno\":\"7303671362\",\r\n    \"password\":\"sunny\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/foodproduct/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"foodproduct",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "FPROD1733412023"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Food Product",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\":\"FPROD1733326690\",\r\n  \"name\": \"Veg Pizza\",\r\n  \"description\": \"ngredients.\",\r\n  \"category\": \"Pizza\",\r\n  \"type\": \"Veg\",\r\n  \"price\": 12.99,\r\n  \"image_url\": \"https://example.com/images/veg_pizza.jpg\",\r\n  \"is_active\": true\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/foodproduct/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"foodproduct",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "FPROD1733326690"
+								}
+							]
+						}
 					},
 					"response": []
 				}
@@ -247,13 +1652,13 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": " eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzMyNDExNjYsImlhdCI6MTczMzE1NDc2Niwic3ViIjoiVVNSMTczMzE0ODY5MyJ9.L-B_Z1kJj-TP2JJj7oDQ76YabkfNtZU_3AVpbmWRLhs",
+								"value": "{{token}}",
 								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": " {\r\n        \"product_id\": \"FPROD1733167899\",\r\n        \"variant_name\": \"Small\",\r\n        \"additional_description\": \"Small size, perfect for 1 person.\",\r\n        \"price\": 8.99,\r\n        \"quantity_available\": 100,\r\n        \"is_active\": true\r\n    }",
+							"raw": " {\r\n        \"product_id\": \"FPROD1733326690 \",\r\n        \"variant_name\": \"Large\",\r\n        \"additional_description\": \"Small size, perfect for 1 person.\",\r\n        \"price\": 10.99,\r\n        \"quantity_available\": 100,\r\n        \"is_active\": true\r\n    }",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -261,6 +1666,159 @@
 							}
 						},
 						"url": "localhost:3000/api/productvariant"
+					},
+					"response": []
+				},
+				{
+					"name": "Create product variant Copy",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": " {\r\n    \"id\":\"PRODV1733414395\",\r\n    \"product_id\": \"FPROD1733326690 \",\r\n    \"variant_name\": \"Large\",\r\n    \"additional_description\": \"Large size, perfect for 1 person.\",\r\n    \"price\": 10.99,\r\n    \"quantity_available\": 100,\r\n    \"is_active\": true\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/productvariant/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"productvariant",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "PRODV1733414395"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product variants",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": " {\r\n        \"product_id\": \"FPROD1733167899\",\r\n        \"variant_name\": \"Large\",\r\n        \"additional_description\": \"Small size, perfect for 1 person.\",\r\n        \"price\": 10.99,\r\n        \"quantity_available\": 100,\r\n        \"is_active\": true\r\n    }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/productvariants"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product variant",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/productvariant/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"productvariant",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "PRODV1733414395"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Product variant",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/productvariant/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"productvariant",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "PRODV1733414395"
+								}
+							]
+						}
 					},
 					"response": []
 				}
@@ -276,7 +1834,160 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzMzMzc3MzksImlhdCI6MTczMzI1MTMzOSwic3ViIjoiVVNSMTczMzE0ODY5MyJ9.WtL42iYIgBDYJ81zYy_lH7imhCtle_2emYIX4jCVx34",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Dominoz Pizza\",\r\n  \"address\": \"ADDRS1733160190\",\r\n  \"phone_number\": \"1234567890\",\r\n  \"email\": \"test@example.com\",\r\n  \"opening_time\": \"2023-12-01T08:00:00Z\",\r\n  \"closing_time\": \"2023-12-01T22:00:00Z\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/restaurant"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Restaurant",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\": \"REST1733321934\",\r\n    \"name\": \"Dominoz Pizza\",\r\n    \"address\": \"ADDRS1733160270\",\r\n    \"phone_number\": \"9423534235\",\r\n    \"email\": \"test@example.com\",\r\n    \"opening_time\": \"2023-12-01T08:00:00Z\",\r\n    \"closing_time\": \"2023-12-01T22:00:00Z\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/restaurant/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"restaurant",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "REST1733321934"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Restaurant",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\": \"REST1733415199\",\r\n    \"name\": \"Dominoz Pizza\",\r\n    \"address\": \"ADDRS1733160270\",\r\n    \"phone_number\": \"9423534235\",\r\n    \"email\": \"test@example.com\",\r\n    \"opening_time\": \"2023-12-01T08:00:00Z\",\r\n    \"closing_time\": \"2023-12-01T22:00:00Z\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/restaurant/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"restaurant",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "REST1733415199"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  Restaurant",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/restaurant/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"restaurant",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "REST1733415199"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get ALL Restaurants",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
 								"type": "text"
 							}
 						],
@@ -289,11 +2000,40 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/restaurant"
+						"url": "localhost:3000/api/restaurants"
 					},
 					"response": []
 				}
 			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "token",
+			"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzM0MDc5OTcsImlhdCI6MTczMzMyMTU5Nywic3ViIjoiVVNSMTczMzE0ODY5MyJ9.LFGEirSqASFFgHuVzBhmzGa2JM6pWq3oFyDer4ASycY",
+			"type": "string"
 		}
 	]
 }

@@ -4,8 +4,10 @@ import (
 	"context"
 	"dailzo/globals"
 	"dailzo/models"
+	"errors"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -48,29 +50,40 @@ func (r *OrderItemRepository) CreateOrderItem(ctx context.Context, orderItem mod
 }
 
 // GetOrderItemByID retrieves an order item by its ID
-func (r *OrderItemRepository) GetOrderItems(ctx context.Context) (*models.OrderItem, error) {
+func (r *OrderItemRepository) GetOrderItems(ctx context.Context) ([]models.OrderItem, error) {
 	query := `SELECT id, order_id, product_variant_id, quantity, price, created_on, last_updated_on, created_by, last_modified_by
 		FROM order_items`
+	var orderItems []models.OrderItem
 
-	var orderItem models.OrderItem
-	err := r.db.QueryRow(ctx, query).Scan(
-		&orderItem.ID,
-		&orderItem.OrderID,
-		&orderItem.ProductVariantID,
-		&orderItem.Quantity,
-		&orderItem.Price,
-		&orderItem.CreatedOn,
-		&orderItem.LastUpdatedOn,
-		&orderItem.CreatedBy,
-		&orderItem.LastModifiedBy,
-	)
+	rows, err := r.db.Query(ctx, query)
+	if err == pgx.ErrNoRows {
+		return nil, errors.New("no address found")
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var orderItem models.OrderItem
+		if err = rows.Scan(
+			&orderItem.ID,
+			&orderItem.OrderID,
+			&orderItem.ProductVariantID,
+			&orderItem.Quantity,
+			&orderItem.Price,
+			&orderItem.CreatedOn,
+			&orderItem.LastUpdatedOn,
+			&orderItem.CreatedBy,
+			&orderItem.LastModifiedBy,
+		); err != nil {
+			return nil, err
+		}
+		orderItems = append(orderItems, orderItem)
+	}
 
 	if err != nil {
 		println("Error in query:", err.Error())
 		return nil, err
 	}
 
-	return &orderItem, nil
+	return orderItems, nil
 }
 
 func (r *OrderItemRepository) GetOrderItemByID(ctx context.Context, id string) (*models.OrderItem, error) {

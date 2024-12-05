@@ -4,6 +4,8 @@ import (
 	"context"
 	"dailzo/globals"
 	"dailzo/models"
+	"fmt"
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -108,18 +110,27 @@ func (r *RatingRepository) GetRatings(ctx context.Context) ([]models.Rating, err
 
 func (r *RatingRepository) UpdateRating(ctx context.Context, rating models.Rating) error {
 	query := `UPDATE ratings
-		SET user_id = $1,  entity_id = $2, order_id = $3, rating = $4, comment = $5, last_updated_on = $6, last_modified_by = $7
-		WHERE id = $8`
+		SET user_id = $1,  entity_id = $2,  rating = $3, comment = $4, last_updated_on = $5, last_modified_by = $6
+		WHERE id = $7`
 
 	_, err := r.db.Exec(ctx, query,
 		rating.UserID,
 		rating.EntityID,
 		rating.Rating,
 		rating.Comment,
-		rating.LastUpdatedOn,
-		rating.LastModifiedBy,
+		time.Now(),
+		globals.GetLoogedInUserId(),
 		rating.ID,
 	)
+
+	// Check for errors
+	if err != nil {
+		// Log the error (you can use a proper logging library in production)
+		log.Printf("Error updating rating: %v", err)
+
+		// Return the error to the caller, you can wrap it for more context
+		return fmt.Errorf("failed to update rating: %w", err)
+	}
 
 	return err
 }

@@ -36,6 +36,7 @@ func (r *PaymentRepository) CreatePayment(ctx context.Context, payment models.Pa
 		payment.TransactionID,
 		time.Now(),
 		time.Now(),
+		time.Now(),
 		globals.GetLoogedInUserId(),
 		globals.GetLoogedInUserId(),
 	).Scan(&payment.ID)

@@ -23,12 +23,12 @@ func (r *PaymentMethodRepository) CreatePaymentMethod(ctx context.Context, payme
 	id := GetIdToRecord("PAYMTD")
 	query := `INSERT INTO payment_methods 
 		(id, user_id, type, provider, account_number, expiry_date, is_default, created_on, last_updated_on, created_by, last_modified_by, name_on_card, card_type, cvv_encrypted, bank_name, ifsc_code, account_holder_name, is_active)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 		RETURNING id`
 
 	err := r.db.QueryRow(ctx, query,
 		id,
-		paymentMethod.UserID,
+		globals.GetLoogedInUserId(),
 		paymentMethod.Type,
 		paymentMethod.Provider,
 		paymentMethod.AccountNumber,
@@ -46,7 +46,7 @@ func (r *PaymentMethodRepository) CreatePaymentMethod(ctx context.Context, payme
 		paymentMethod.AccountHolderName,
 		paymentMethod.IsActive,
 	).Scan(&paymentMethod.ID)
-
+	println("Error in query:", query)
 	if err != nil {
 		println("Error in query:", err.Error())
 		return "", err
@@ -57,11 +57,13 @@ func (r *PaymentMethodRepository) CreatePaymentMethod(ctx context.Context, payme
 
 func (r *PaymentMethodRepository) GetPaymentMethodByID(ctx context.Context, id string) (models.PaymentMethod, error) {
 	var paymentMethod models.PaymentMethod
-	query := `SELECT id, provider, account_number, created_on, last_updated_on, created_by, last_modified_by 
+	query := `SELECT id, user_id, type, provider, account_number, created_on, last_updated_on, created_by, last_modified_by 
 	          FROM payment_methods WHERE id = $1`
 
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&paymentMethod.ID,
+		&paymentMethod.UserID,
+		&paymentMethod.Type,
 		&paymentMethod.Provider,
 		&paymentMethod.AccountNumber,
 		&paymentMethod.CreatedOn,
@@ -79,7 +81,7 @@ func (r *PaymentMethodRepository) GetPaymentMethodByID(ctx context.Context, id s
 
 func (r *PaymentMethodRepository) GetPaymentMethods(ctx context.Context) ([]models.PaymentMethod, error) {
 	var paymentMethods []models.PaymentMethod
-	query := `SELECT id, provider, account_number, created_on, last_updated_on, created_by, last_modified_by 
+	query := `SELECT id, user_id, type, provider, account_number, created_on, last_updated_on, created_by, last_modified_by
 	          FROM payment_methods`
 
 	rows, err := r.db.Query(ctx, query)
@@ -92,6 +94,8 @@ func (r *PaymentMethodRepository) GetPaymentMethods(ctx context.Context) ([]mode
 		var paymentMethod models.PaymentMethod
 		if err := rows.Scan(
 			&paymentMethod.ID,
+			&paymentMethod.UserID,
+			&paymentMethod.Type,
 			&paymentMethod.Provider,
 			&paymentMethod.AccountNumber,
 			&paymentMethod.CreatedOn,

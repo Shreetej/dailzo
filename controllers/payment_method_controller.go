@@ -4,6 +4,7 @@ import (
 	"dailzo/config"
 	"dailzo/models"
 	"dailzo/repository"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -18,6 +19,8 @@ func NewPaymentMethodController(repo *repository.PaymentMethodRepository) *Payme
 
 func (c *PaymentMethodController) CreatePaymentMethod(ctx *fiber.Ctx) error {
 	var paymentMethod models.PaymentMethod
+	fmt.Println("Error in paymentMethod:", paymentMethod)
+
 	if err := ctx.BodyParser(&paymentMethod); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid input"})
 	}
