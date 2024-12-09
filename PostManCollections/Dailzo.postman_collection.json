@@ -16,7 +16,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"first_name\":\"First\",\r\n    \"last_name\":\"Last\",\r\n    \"middle_name\":\"Middle\",\r\n    \"email\":\"first@gmail.com\",\r\n    \"mobileno\":\"9423769918\",\r\n    \"password\":\"first\"\r\n}",
+							"raw": "{\r\n    \"first_name\":\"First\",\r\n    \"last_name\":\"Last\",\r\n    \"middle_name\":\"Middle\",\r\n    \"email\":\"firstLast@gmail.com\",\r\n    \"mobileno\":\"9423769918\",\r\n    \"password\":\"first\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1215,20 +1215,20 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:3000/api/rating/:id=",
+							"raw": "localhost:3000/api/refund/:id=",
 							"host": [
 								"localhost"
 							],
 							"port": "3000",
 							"path": [
 								"api",
-								"rating",
+								"refund",
 								":id="
 							],
 							"variable": [
 								{
 									"key": "id=",
-									"value": "RTNG1733423179"
+									"value": "RFND1733424680"
 								}
 							]
 						}
@@ -1840,7 +1840,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"name\": \"Dominoz Pizza\",\r\n  \"address\": \"ADDRS1733160190\",\r\n  \"phone_number\": \"1234567890\",\r\n  \"email\": \"test@example.com\",\r\n  \"opening_time\": \"2023-12-01T08:00:00Z\",\r\n  \"closing_time\": \"2023-12-01T22:00:00Z\"\r\n}\r\n",
+							"raw": "{\r\n  \"name\": \"Dominoz Pizza \",\r\n  \"address\": \"ADDRS1733160190\",\r\n  \"phone_number\": \"1234567890\",\r\n  \"email\": \"test@example.com\",\r\n  \"opening_time\": \"2023-12-01T08:00:00Z\",\r\n  \"closing_time\": \"2023-12-01T22:00:00Z\"\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2001,6 +2001,76 @@
 							}
 						},
 						"url": "localhost:3000/api/restaurants"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Mail",
+			"item": [
+				{
+					"name": "send Verify OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"to\": \"nghuge4@gmail.com\",\r\n  \"subject\": \"Verify Dailzo\",\r\n  \"message\" : \"OTP : 443344\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/api/send-verify-email"
+					},
+					"response": []
+				},
+				{
+					"name": "verify otp",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\": \"REST1733321934\",\r\n    \"name\": \"Dominoz Pizza\",\r\n    \"address\": \"ADDRS1733160270\",\r\n    \"phone_number\": \"9423534235\",\r\n    \"email\": \"test@example.com\",\r\n    \"opening_time\": \"2023-12-01T08:00:00Z\",\r\n    \"closing_time\": \"2023-12-01T22:00:00Z\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/restaurant/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"restaurant",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "REST1733321934"
+								}
+							]
+						}
 					},
 					"response": []
 				}

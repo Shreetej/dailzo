@@ -9,13 +9,17 @@ import (
 )
 
 type Config struct {
-	DBHost     string
-	DBPort     string
-	DBUser     string
-	DBPassword string
-	DBName     string
-	AppPort    string
-	JWTSecret  string
+	DBHost       string
+	DBPort       string
+	DBUser       string
+	DBPassword   string
+	DBName       string
+	AppPort      string
+	JWTSecret    string
+	SmtpHost     string
+	SmtpPort     string
+	SmtpEmail    string
+	smtpPassword string
 }
 
 func LoadConfig() Config {
@@ -24,13 +28,17 @@ func LoadConfig() Config {
 	}
 
 	return Config{
-		DBHost:     getEnv("DB_HOST", "localhost"),
-		DBPort:     getEnv("DB_PORT", "5432"),
-		DBUser:     getEnv("DB_USER", "postgres"),
-		DBPassword: getEnv("DB_PASSWORD", "roger"),
-		DBName:     getEnv("DB_NAME", "dailzo"),
-		AppPort:    getEnv("APP_PORT", "3000"),
-		JWTSecret:  getEnv("JWT_SECRET", "secret"),
+		DBHost:       getEnv("DB_HOST", "localhost"),
+		DBPort:       getEnv("DB_PORT", "5432"),
+		DBUser:       getEnv("DB_USER", "postgres"),
+		DBPassword:   getEnv("DB_PASSWORD", "roger"),
+		DBName:       getEnv("DB_NAME", "dailzo"),
+		AppPort:      getEnv("APP_PORT", "3000"),
+		JWTSecret:    getEnv("JWT_SECRET", "secret"),
+		SmtpHost:     getEnv("SMTP_HOST", "smtp.gmail.com"),
+		SmtpPort:     getEnv("SMTP_PORT", "587"),
+		SmtpEmail:    getEnv("SMTP_EMAIL", "nitej.techno@gmail.com"),
+		smtpPassword: getEnv("SMTP_PASSWORD", "Nitej@2024"),
 	}
 }
 

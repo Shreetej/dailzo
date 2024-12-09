@@ -26,6 +26,21 @@ CREATE TABLE IF NOT EXISTS public.addresses
     CONSTRAINT "Address_pkey" PRIMARY KEY (id)
 );
 
+CREATE TABLE IF NOT EXISTS public.consent
+(
+    id character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    entity_to_verify character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    otp character varying(6) COLLATE pg_catalog."default",
+    otp_sent_on timestamp without time zone,
+    otp_expired_on timestamp without time zone,
+    created_date timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    created_by character varying(255) COLLATE pg_catalog."default",
+    last_modified_by character varying(255) COLLATE pg_catalog."default",
+    last_modified_on timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    verified_on timestamp without time zone,
+    verified boolean
+);
+
 CREATE TABLE IF NOT EXISTS public.food_products
 (
     id character(36) COLLATE pg_catalog."default" NOT NULL,
@@ -215,6 +230,20 @@ ALTER TABLE IF EXISTS public.addresses
     REFERENCES public.users (id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.consent
+    ADD CONSTRAINT fk_created_by FOREIGN KEY (created_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE CASCADE;
+
+
+ALTER TABLE IF EXISTS public.consent
+    ADD CONSTRAINT fk_last_modified_by FOREIGN KEY (last_modified_by)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE SET NULL;
 
 
 ALTER TABLE IF EXISTS public.food_products

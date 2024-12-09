@@ -41,6 +41,7 @@ func SetupRoutes(
 	ratingController *controllers.RatingController,
 	refundController *controllers.RefundController,
 	restaurantController *controllers.RestaurantController,
+	emailController *controllers.EmailController,
 ) {
 	api := app.Group("/api")
 
@@ -129,4 +130,9 @@ func SetupRoutes(
 	// api.Get("/payments/order/:orderId", middleware.JWTMiddleware(), paymentController.GetPaymentsByOrderId)
 	// api.Get("/payments/status/:status", middleware.JWTMiddleware(), paymentController.GetPaymentsByStatus)
 	// api.Get("/payments/count", middleware.JWTMiddleware(), paymentController.CountPayments)
+
+	//email
+	api.Post("/send-verify-email", emailController.SendVerifyEmailOtp)
+	api.Put("/verify-email/:entityToVerify", emailController.VerifyOTPHandler)
+
 }

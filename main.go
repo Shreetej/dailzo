@@ -51,6 +51,9 @@ func main() {
 	refundRepo := repository.NewRefundRepository(db.DB)
 	restaurantRepo := repository.NewRestaurantRepository(db.DB)
 
+	consentRepo := repository.NewConsentRepository(db.DB)
+	consentController := controllers.NewConsentController(consentRepo)
+	emailController := controllers.NewEmailControllerWithConsent(consentController)
 	// Controllers
 	userController := controllers.NewUserController(userRepo)
 	addressController := controllers.NewAddressController(addressRepo)
@@ -63,6 +66,8 @@ func main() {
 	ratingController := controllers.NewRatingController(ratingRepo)
 	refundController := controllers.NewRefundController(refundRepo)
 	restaurantController := controllers.NewRestaurantController(restaurantRepo)
+
+	//emailController := controllers.NewEmailController()
 
 	// Initialize Fiber app
 	app := fiber.New()
@@ -81,6 +86,7 @@ func main() {
 		ratingController,
 		refundController,
 		restaurantController,
+		emailController,
 	)
 
 	// Graceful shutdown handling
