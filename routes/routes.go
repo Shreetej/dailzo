@@ -67,6 +67,9 @@ func SetupRoutes(
 	api.Delete("/foodproduct/:id", middleware.JWTMiddleware(), foodProductController.DeleteFoodProduct)
 	api.Get("/foodproducts", middleware.JWTMiddleware(), foodProductController.GetFoodProducts)
 
+	//name search || catagory
+	api.Get("/foodproducts/:entity", middleware.JWTMiddleware(), foodProductController.GetFoodProductWithEntity)
+
 	api.Post("/productvariant", middleware.JWTMiddleware(), productVariantController.CreateProductVariant)
 	api.Get("/productvariant/:id", middleware.JWTMiddleware(), productVariantController.GetProductVariantById)
 	api.Put("/productvariant/:id", middleware.JWTMiddleware(), productVariantController.UpdateProductVariant)

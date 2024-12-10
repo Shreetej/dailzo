@@ -30,8 +30,23 @@ func (c *FoodProductController) CreateFoodProduct(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"id": id})
 }
 
+func (c *FoodProductController) GetFoodProductWithEntity(ctx *fiber.Ctx) error {
+	foodProductEntity := ctx.Params("entity")
+	println("entity  :", foodProductEntity)
+
+	foodProducts, err := c.repo.GetFoodProductWithEntity(ctx.Context(), foodProductEntity)
+	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "No food products found"})
+	}
+	return ctx.JSON(foodProducts)
+}
+
 func (c *FoodProductController) GetFoodProductById(ctx *fiber.Ctx) error {
 	foodProductID := ctx.Params("id")
+	foodProductEntity := ctx.Params("entity")
+	println("entity  :", foodProductEntity)
+	println("foodProductID  :", foodProductID)
+
 	foodProduct, err := c.repo.GetFoodProductByID(ctx.Context(), foodProductID)
 	if err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Food product not found"})

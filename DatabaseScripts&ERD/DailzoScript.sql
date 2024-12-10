@@ -3,6 +3,10 @@
 BEGIN;
 
 
+CREATE TYPE public.food_type AS ENUM
+    ('Veg', 'Non-Veg', 'Egg', 'Vegan');
+
+
 CREATE TABLE IF NOT EXISTS public.addresses
 (
     id character varying(255) COLLATE pg_catalog."default" NOT NULL,

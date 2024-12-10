@@ -106,6 +106,42 @@ func (r *FoodProductRepository) GetFoodProducts(ctx context.Context) ([]models.F
 	return foodProducts, nil
 }
 
+func (r *FoodProductRepository) GetFoodProductWithEntity(ctx context.Context, entity string) ([]models.FoodProduct, error) {
+	var foodProducts []models.FoodProduct
+	println("entity  :", entity)
+
+	query := `SELECT id, name, description, price, category, created_by, last_modified_by 
+	          FROM food_products WHERE is_active = true AND (category  ILIKE $1 OR name ILIKE $1)`
+
+	rows, err := r.db.Query(ctx, query, entity)
+	if err != nil {
+		println("err :", err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var foodProduct models.FoodProduct
+		if err := rows.Scan(
+			&foodProduct.ID,
+			&foodProduct.Name,
+			&foodProduct.Description,
+			&foodProduct.Price,
+			&foodProduct.Category,
+			&foodProduct.CreatedBy,
+			&foodProduct.LastModifiedBy,
+		); err != nil {
+			return nil, err
+		}
+		foodProducts = append(foodProducts, foodProduct)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return foodProducts, nil
+}
+
 func (r *FoodProductRepository) UpdateFoodProduct(ctx context.Context, foodProduct models.FoodProduct) error {
 	query := `UPDATE food_products
 		SET name = $1, description = $2,  price = $3, category = $4, last_updated_on = $5, last_modified_by = $6, type = $7,image_url = $8, is_active = $9
