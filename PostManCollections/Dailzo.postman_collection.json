@@ -1551,7 +1551,51 @@
 							"variable": [
 								{
 									"key": "id=",
-									"value": "FPROD1733412023"
+									"value": "FPROD1733167899"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Food Product Entity",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/foodproducts/:entity=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"foodproducts",
+								":entity="
+							],
+							"variable": [
+								{
+									"key": "entity=",
+									"value": "pizza"
 								}
 							]
 						}
@@ -1840,7 +1884,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"name\": \"Dominoz Pizza \",\r\n  \"address\": \"ADDRS1733160190\",\r\n  \"phone_number\": \"1234567890\",\r\n  \"email\": \"test@example.com\",\r\n  \"opening_time\": \"2023-12-01T08:00:00Z\",\r\n  \"closing_time\": \"2023-12-01T22:00:00Z\"\r\n}\r\n",
+							"raw": "{\r\n  \"name\": \"aNNA IDLI\",\r\n  \"address\": \"ADDRS1733160190\",\r\n  \"phone_number\": \"1234567890\",\r\n  \"email\": \"test@example.com\",\r\n  \"opening_time\": \"2023-12-01T08:00:00Z\",\r\n  \"closing_time\": \"2023-12-01T22:00:00Z\"\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2045,29 +2089,30 @@
 							}
 						],
 						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"id\": \"REST1733321934\",\r\n    \"name\": \"Dominoz Pizza\",\r\n    \"address\": \"ADDRS1733160270\",\r\n    \"phone_number\": \"9423534235\",\r\n    \"email\": \"test@example.com\",\r\n    \"opening_time\": \"2023-12-01T08:00:00Z\",\r\n    \"closing_time\": \"2023-12-01T22:00:00Z\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "otp",
+									"value": "017487",
+									"type": "text"
 								}
-							}
+							]
 						},
 						"url": {
-							"raw": "localhost:3000/api/restaurant/:id=",
+							"raw": "localhost:3000/api/verify-email/:entityToVerify=",
 							"host": [
 								"localhost"
 							],
 							"port": "3000",
 							"path": [
 								"api",
-								"restaurant",
-								":id="
+								"verify-email",
+								":entityToVerify="
 							],
 							"variable": [
 								{
-									"key": "id=",
-									"value": "REST1733321934"
+									"key": "entityToVerify=",
+									"value": "nghuge4@gmail.com"
 								}
 							]
 						}
