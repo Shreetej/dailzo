@@ -5,6 +5,7 @@ import (
 	"dailzo/config"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -45,6 +46,22 @@ func ConnectDatabase(cfg config.Config) {
 	}
 
 	log.Println("Connected to the database successfully!")
+	// Load the .sql file
+	sqlFile := "DatabaseScripts&ERD/DailzoScript.sql"
+	sqlBytes, err := os.ReadFile(sqlFile)
+	if err != nil {
+		log.Fatalf("Failed to read SQL file: %v\n", err)
+	}
+	sqlContent := string(sqlBytes)
+
+	// Execute the SQL commands
+	_, err = DB.Exec(ctx, sqlContent)
+	if err != nil {
+		log.Fatalf("Failed to execute SQL: %v\n", err)
+	}
+
+	fmt.Println("All tables created successfully!")
+
 }
 
 // CloseDatabase closes the connection pool.
