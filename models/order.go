@@ -16,3 +16,23 @@ type Order struct {
 	CreatedBy        string    `json:"created_by"`         // ID of the user who created the order
 	LastModifiedBy   string    `json:"last_modified_by"`   // ID of the user who last modified the order
 }
+
+type OrderDisplay struct {
+    OrderID            string    `json:"orderId"`
+    HotelName          string    `json:"hotelName"`
+    HotelAddress       string    `json:"hotelAddress"`
+    DeliveryAddressName string   `json:"deliveryAddressName"`
+    DeliveryAddress    string    `json:"deliveryAddress"`
+    OrderAmt           string    `json:"orderAmt"`
+    OrderItems         []Item    `json:"orderItems"`
+    OrderTime          string    `json:"orderTime"`
+    OrderStatus        string    `json:"orderStatus"`
+    DeliveryRating     int       `json:"deliveryRating"`
+    FoodRating         int       `json:"foodRating"`
+}
+
+type Item struct {
+    ItemName  string `json:"itemName"`
+    Quantity  int    `json:"quantity"`
+    ItemPrice int    `json:"itemPrice"`
+}

@@ -70,8 +70,8 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id string) (*models.Us
 
 func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	var user models.User
-	query := `SELECT id, username, email, mobileno, password FROM users WHERE email = $1`
-	err := r.db.QueryRow(ctx, query, email).Scan(&user.ID, &user.Username, &user.Email, &user.MobileNo, &user.Password)
+	query := `SELECT id, username, email, mobileno, password, favourite_restaurants, fevourite_foods FROM users WHERE email = $1`
+	err := r.db.QueryRow(ctx, query, email).Scan(&user.ID, &user.Username, &user.Email, &user.MobileNo, &user.Password, &user.FavouriteRestaurants, &user.FavouriteFoods)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			fmt.Println("User not found for email:", email)

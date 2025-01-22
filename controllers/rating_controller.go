@@ -4,6 +4,7 @@ import (
 	"dailzo/config"
 	"dailzo/models"
 	"dailzo/repository"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -39,6 +40,15 @@ func (c *RatingController) GetRating(ctx *fiber.Ctx) error {
 	return ctx.JSON(rating)
 }
 
+func (c *RatingController) GetTopRatedEntities(ctx *fiber.Ctx) error {
+	entityType := ctx.Params("toprated")
+	fmt.Printf("Entity type: %s\n", entityType)
+	ratings, err := c.repo.GetTopRatedEntities(ctx.Context(), entityType)
+	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "No ratings found"})
+	}
+	return ctx.JSON(ratings)
+}
 func (c *RatingController) GetRatings(ctx *fiber.Ctx) error {
 	ratings, err := c.repo.GetRatings(ctx.Context())
 	if err != nil {

@@ -50,12 +50,13 @@ func (r *RatingRepository) CreateRating(ctx context.Context, rating models.Ratin
 }
 func (r *RatingRepository) GetRatingByID(ctx context.Context, id string) (models.Rating, error) {
 	var rating models.Rating
-	query := `SELECT id, user_id,  entity_id, rating, comment, created_on, last_updated_on, created_by, last_modified_by
+	query := `SELECT id, user_id,  entity_type, entity_id, rating, comment, created_on, last_updated_on, created_by, last_modified_by
 	          FROM ratings WHERE id = $1`
 
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&rating.ID,
 		&rating.UserID,
+		&rating.EntityType,
 		&rating.EntityID,
 		&rating.Rating,
 		&rating.Comment,
@@ -74,7 +75,7 @@ func (r *RatingRepository) GetRatingByID(ctx context.Context, id string) (models
 
 func (r *RatingRepository) GetRatings(ctx context.Context) ([]models.Rating, error) {
 	var ratings []models.Rating
-	query := `SELECT id, user_id, entity_id, rating, comment, created_on, last_updated_on, created_by, last_modified_by
+	query := `SELECT id, user_id, entity_type, entity_id, rating, comment, created_on, last_updated_on, created_by, last_modified_by
 	          FROM ratings`
 
 	rows, err := r.db.Query(ctx, query)
@@ -88,6 +89,44 @@ func (r *RatingRepository) GetRatings(ctx context.Context) ([]models.Rating, err
 		if err := rows.Scan(
 			&rating.ID,
 			&rating.UserID,
+			&rating.EntityType,
+			&rating.EntityID,
+			&rating.Rating,
+			&rating.Comment,
+			&rating.CreatedOn,
+			&rating.LastUpdatedOn,
+			&rating.CreatedBy,
+			&rating.LastModifiedBy,
+		); err != nil {
+			return nil, err
+		}
+		ratings = append(ratings, rating)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return ratings, nil
+}
+
+func (r *RatingRepository) GetTopRatedEntities(ctx context.Context, entityType string) ([]models.Rating, error) {
+	var ratings []models.Rating
+	query := `SELECT id, user_id, entity_type, entity_id, rating, comment, created_on, last_updated_on, created_by, last_modified_by
+	          FROM ratings WHERE entity_type = $1 ORDER BY rating DESC`
+
+	rows, err := r.db.Query(ctx, query, entityType)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var rating models.Rating
+		if err := rows.Scan(
+			&rating.ID,
+			&rating.UserID,
+			&rating.EntityType,
 			&rating.EntityID,
 			&rating.Rating,
 			&rating.Comment,

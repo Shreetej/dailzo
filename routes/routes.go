@@ -82,6 +82,7 @@ func SetupRoutes(
 	api.Put("/restaurant/:id", middleware.JWTMiddleware(), restaurantController.UpdateRestaurant)
 	api.Delete("/restaurant/:id", middleware.JWTMiddleware(), restaurantController.DeleteRestaurant)
 	api.Get("/restaurants", middleware.JWTMiddleware(), restaurantController.GetRestaurants)
+	api.Get("/restaurants/:name", middleware.JWTMiddleware(), restaurantController.GetRestaurantsByName)
 	// api.Get("/restaurants/city/:city", middleware.JWTMiddleware(), restaurantController.GetRestaurantsByCity)
 	// api.Get("/restaurants/cuisine/:cuisine", middleware.JWTMiddleware(), restaurantController.GetRestaurantsByCuisine)
 
@@ -112,7 +113,7 @@ func SetupRoutes(
 	api.Put("/rating/:id", middleware.JWTMiddleware(), ratingController.UpdateRating)
 	api.Delete("/rating/:id", middleware.JWTMiddleware(), ratingController.DeleteRating)
 	api.Get("/ratings", middleware.JWTMiddleware(), ratingController.GetRatings)
-	// api.Get("/ratings/restaurant/:restaurantId", middleware.JWTMiddleware(), ratingController.GetRatingsByRestaurant)
+	api.Get("/ratings/:toprated", middleware.JWTMiddleware(), ratingController.GetTopRatedEntities)
 	// api.Get("/ratings/user/:userId", middleware.JWTMiddleware(), ratingController.GetRatingsByUser)
 
 	// Refund routes

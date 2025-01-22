@@ -69,7 +69,28 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 	log := config.SetupLogger()
 	log.Info().Msgf("User logged in with ID: %d", dbUser.ID)
 	globals.UpdateUserID(dbUser.ID)
+	var favouriteFoods string
+	if dbUser.FavouriteFoods != nil {
+		favouriteFoods = *dbUser.FavouriteFoods // Dereference the pointer
+	} else {
+		favouriteFoods = "" // Or assign a default value if you prefer
+	}
+	var favouriteRestaurants string
+	if dbUser.FavouriteRestaurants != nil {
+		favouriteRestaurants = *dbUser.FavouriteRestaurants
+	} else {
+		favouriteRestaurants = ""
+	}
 
+	// Add user to shared state
+
+	globals.UpdateLoggedInUser(dbUser.ID, dbUser.Username, "", favouriteRestaurants, favouriteFoods)
+	sess, err := globals.Store.Get(ctx)
+	sess.Set("userID", dbUser.ID)
+	sess.Set("username", dbUser.Username)
+	sess.Set("favouriteFoods", "favouriteFoods")
+	sess.Set("favouriteRestaurants", "REST1733253623")
+	sess.Save()
 	return ctx.JSON(fiber.Map{"token": token})
 }
 

@@ -3,10 +3,6 @@
 BEGIN;
 
 
-CREATE TYPE public.food_type AS ENUM
-    ('Veg', 'Non-Veg', 'Egg', 'Vegan');
-
-
 CREATE TABLE IF NOT EXISTS public.addresses
 (
     id character varying(255) COLLATE pg_catalog."default" NOT NULL,
@@ -59,6 +55,8 @@ CREATE TABLE IF NOT EXISTS public.food_products
     last_updated_on timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by character(36) COLLATE pg_catalog."default",
     last_modified_by character(36) COLLATE pg_catalog."default",
+    rating double precision,
+    total_ratings integer,
     CONSTRAINT food_product_pkey PRIMARY KEY (id)
 );
 
@@ -193,6 +191,8 @@ CREATE TABLE IF NOT EXISTS public.restaurants
     last_updated_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by character varying COLLATE pg_catalog."default",
     last_modified_by character varying COLLATE pg_catalog."default",
+    rating double precision,
+    total_ratings integer,
     CONSTRAINT restaurants_pkey PRIMARY KEY (id)
 );
 
@@ -479,19 +479,5 @@ ALTER TABLE IF EXISTS public.users
     REFERENCES public.users (id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION;
-
-	/*SELECT
-	CONSTRAINT_NAME,
-	CHECK_CLAUSE
-FROM
-	INFORMATION_SCHEMA.CHECK_CONSTRAINTS
-WHERE
-	CONSTRAINT_NAME = 'refunds_status_check';
-
-	
-*/
-
-
-
 
 END;

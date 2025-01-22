@@ -4,6 +4,7 @@ import (
 	"dailzo/config"
 	"dailzo/models"
 	"dailzo/repository"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -39,9 +40,28 @@ func (c *RestaurantController) GetRestaurant(ctx *fiber.Ctx) error {
 	return ctx.JSON(restaurant)
 }
 
-func (c *RestaurantController) GetRestaurants(ctx *fiber.Ctx) error {
-	restaurants, err := c.repo.GetRestaurants(ctx.Context())
+func (c *RestaurantController) GetRestaurantsByName(ctx *fiber.Ctx) error {
+	name := ctx.Params("name")
+	restaurant, err := c.repo.GetRestaurantsByName(ctx.Context(), name)
 	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Restaurants not found"})
+	}
+	return ctx.JSON(restaurant)
+}
+
+func (c *RestaurantController) GetRestaurantsByNearLocations(ctx *fiber.Ctx) error {
+	name := ctx.Params("name")
+	restaurant, err := c.repo.GetRestaurantsByNearLocations(ctx.Context(), name)
+	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Restaurants not found"})
+	}
+	return ctx.JSON(restaurant)
+}
+
+func (c *RestaurantController) GetRestaurants(ctx *fiber.Ctx) error {
+	restaurants, err := c.repo.GetRestaurants(ctx)
+	if err != nil {
+		fmt.Println("Check  error:", err)
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "No restaurants found"})
 	}
 	return ctx.JSON(restaurants)
