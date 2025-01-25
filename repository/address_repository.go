@@ -103,7 +103,7 @@ func (r *AddressRepository) GetAddressByID(ctx context.Context, id string) (mode
 
 	if err != nil {
 		fmt.Println("Addresses : ", address)
-		fmt.Println("err : ", err)
+		fmt.Println("err : 106", err)
 		return address, err
 	}
 

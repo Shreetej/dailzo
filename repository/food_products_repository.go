@@ -5,17 +5,20 @@ import (
 	"dailzo/globals"
 	"dailzo/models"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type FoodProductRepository struct {
 	db *pgxpool.Pool
+	rp *RestaurantRepository
 }
 
 func NewFoodProductRepository(db *pgxpool.Pool) *FoodProductRepository {
-	return &FoodProductRepository{db: db}
+	return &FoodProductRepository{db: db, rp: NewRestaurantRepository(db)}
 }
 
 func (r *FoodProductRepository) CreateFoodProduct(ctx context.Context, foodProduct models.FoodProduct) (string, error) {
@@ -106,40 +109,79 @@ func (r *FoodProductRepository) GetFoodProducts(ctx context.Context) ([]models.F
 	return foodProducts, nil
 }
 
-func (r *FoodProductRepository) GetFoodProductWithEntity(ctx context.Context, entity string) ([]models.FoodProduct, error) {
-	var foodProducts []models.FoodProduct
-	println("entity  :", entity)
+func (r *FoodProductRepository) GetFoodProductWithEntity(ctx *fiber.Ctx, entity string) ([]models.DisplayFoodCatagoryProducts, error) {
+	var foodProductsToReturn []models.DisplayFoodCatagoryProducts
+	restIdsSet := make(map[string]struct{}) // Use a set for unique restaurant IDs
+	mapResIdToFoodProd := make(map[string][]models.DisplayFoodCatagoryProducts)
+	mapCatToFoodProdToReturn := make(map[string]models.DisplayFoodCatagoryProducts)
 
-	query := `SELECT id, name, description, price, category, created_by, last_modified_by 
-	          FROM food_products WHERE is_active = true AND (category  ILIKE $1 OR name ILIKE $1)`
-
-	rows, err := r.db.Query(ctx, query, entity)
+	// Query for food products
+	query := `SELECT name, description, price, category, restaurant, is_active
+	          FROM food_products WHERE is_active = true AND (category ILIKE $1 OR name ILIKE $1)`
+	rows, err := r.db.Query(ctx.Context(), query, entity)
 	if err != nil {
-		println("err :", err.Error())
+		fmt.Println("Query Error:", err.Error())
 		return nil, err
 	}
 	defer rows.Close()
+
+	// Process food products
 	for rows.Next() {
-		var foodProduct models.FoodProduct
+		var foodProduct models.DisplayFoodCatagoryProducts
 		if err := rows.Scan(
-			&foodProduct.ID,
 			&foodProduct.Name,
 			&foodProduct.Description,
 			&foodProduct.Price,
 			&foodProduct.Category,
-			&foodProduct.CreatedBy,
-			&foodProduct.LastModifiedBy,
+			&foodProduct.RestaurantId,
+			&foodProduct.IsActive,
 		); err != nil {
+			fmt.Println("Row Scan Error:", err)
 			return nil, err
 		}
-		foodProducts = append(foodProducts, foodProduct)
+
+		restaurantID := strings.TrimSpace(foodProduct.RestaurantId)
+		mapResIdToFoodProd[restaurantID] = append(mapResIdToFoodProd[restaurantID], foodProduct)
+		restIdsSet[restaurantID] = struct{}{} // Add to set for unique restaurant IDs
 	}
 
-	if err := rows.Err(); err != nil {
+	// Convert set to slice for querying restaurants
+	var restIds []string
+	for id := range restIdsSet {
+		restIds = append(restIds, id)
+	}
+
+	// Fetch restaurants
+	restaurants, err := r.rp.GetRestaurantsByIDs(ctx, restIds)
+	if err != nil {
+		fmt.Println("Error Fetching Restaurants:", err)
 		return nil, err
 	}
 
-	return foodProducts, nil
+	// Map restaurants to food products
+	for _, restaurant := range restaurants {
+		restaurantID := strings.TrimSpace(restaurant.ID)
+		if foodProducts, ok := mapResIdToFoodProd[restaurantID]; ok {
+			for _, foodProduct := range foodProducts {
+				if existingProduct, exists := mapCatToFoodProdToReturn[foodProduct.Category]; exists {
+					// Append restaurant to existing product
+					existingProduct.Restaurants = append(existingProduct.Restaurants, restaurant)
+					mapCatToFoodProdToReturn[foodProduct.Category] = existingProduct
+				} else {
+					// Create new category product with restaurant
+					foodProduct.Restaurants = []models.DisplayRestaurant{restaurant}
+					mapCatToFoodProdToReturn[foodProduct.Category] = foodProduct
+				}
+			}
+		}
+	}
+
+	// Convert map to slice
+	for _, value := range mapCatToFoodProdToReturn {
+		foodProductsToReturn = append(foodProductsToReturn, value)
+	}
+
+	return foodProductsToReturn, nil
 }
 
 func (r *FoodProductRepository) UpdateFoodProduct(ctx context.Context, foodProduct models.FoodProduct) error {

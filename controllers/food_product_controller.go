@@ -4,6 +4,7 @@ import (
 	"dailzo/config"
 	"dailzo/models"
 	"dailzo/repository"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -34,10 +35,13 @@ func (c *FoodProductController) GetFoodProductWithEntity(ctx *fiber.Ctx) error {
 	foodProductEntity := ctx.Params("entity")
 	println("entity  :", foodProductEntity)
 
-	foodProducts, err := c.repo.GetFoodProductWithEntity(ctx.Context(), foodProductEntity)
+	foodProducts, err := c.repo.GetFoodProductWithEntity(ctx, foodProductEntity)
 	if err != nil {
-		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "No food products found"})
+		fmt.Println("err : 39 ", err.Error())
+
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
 	}
+	fmt.Println("foodProducts :", foodProducts[0].RestaurantId)
 	return ctx.JSON(foodProducts)
 }
 
@@ -57,7 +61,7 @@ func (c *FoodProductController) GetFoodProductById(ctx *fiber.Ctx) error {
 func (c *FoodProductController) GetFoodProducts(ctx *fiber.Ctx) error {
 	foodProducts, err := c.repo.GetFoodProducts(ctx.Context())
 	if err != nil {
-		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "No food products found"})
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
 	}
 	return ctx.JSON(foodProducts)
 }

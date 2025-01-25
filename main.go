@@ -38,8 +38,6 @@ func main() {
 	// productVariantRepo := repository.NewProductVariantRepository(db.DB)
 	// productVariantController := controllers.NewProductVariantController(productVariantRepo)
 
-	
-
 	// Repositories
 	userRepo := repository.NewUserRepository(db.DB)
 	addressRepo := repository.NewAddressRepository(db.DB)
@@ -53,11 +51,9 @@ func main() {
 	refundRepo := repository.NewRefundRepository(db.DB)
 	restaurantRepo := repository.NewRestaurantRepository(db.DB)
 
-	
 	consentRepo := repository.NewConsentRepository(db.DB)
 	consentController := controllers.NewConsentController(consentRepo)
 	emailController := controllers.NewEmailControllerWithConsent(consentController)
-
 
 	// Initialize OfferRepository
 	offerRepo := repository.NewOfferRepository(db.DB)
@@ -98,7 +94,7 @@ func main() {
 		refundController,
 		restaurantController,
 		emailController,
-		offerController
+		offerController,
 	)
 
 	// Graceful shutdown handling

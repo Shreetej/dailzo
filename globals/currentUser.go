@@ -86,5 +86,5 @@ func GetLoogedInUserId() string {
 func GetSelectedAddLatLong() (float64, float64) {
 	mu.Lock()
 	defer mu.Unlock()
-	return SelectedUsersAddress.Latitude, SelectedUsersAddress.Longitude
+	return 72.979, 19.013
 }

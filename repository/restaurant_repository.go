@@ -77,6 +77,61 @@ func (r *RestaurantRepository) GetRestaurantByID(ctx context.Context, id string)
 	return restaurant, nil
 }
 
+func (r *RestaurantRepository) GetRestaurantsByIDs(ctx *fiber.Ctx, ids []string) ([]models.DisplayRestaurant, error) {
+	var restaurants []models.DisplayRestaurant
+	//var uLat, uLong = globals.GetSelectedAddLatLong()
+	var uLat = 72.979
+	var uLong = 19.013
+	//fmt.Println("ids ", ids)
+	idsPGArray := fmt.Sprintf("{%s}", strings.Join(ids, ","))
+	fmt.Println("ids ", idsPGArray)
+
+	query := `SELECT r.id, r.name, r.rating, r.address, a.longitude, a.latitude, r.phone_number, r.email, r.opening_time, r.closing_time, r.created_on, r.last_updated_on, r.created_by, r.last_modified_by
+			  FROM restaurants r JOIN addresses a ON r.address = a.id WHERE r.id = ANY($1)`
+
+	rows, err := r.db.Query(ctx.Context(), query, idsPGArray)
+	if err != nil {
+		fmt.Println("err : 93", err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var restaurant models.DisplayRestaurant
+		var restLat, restLong float64
+		if err := rows.Scan(
+			&restaurant.ID,
+			&restaurant.Name,
+			&restaurant.Rating,
+			&restaurant.Address,
+			&restLong,
+			&restLat,
+			&restaurant.PhoneNumber,
+			&restaurant.Email,
+			&restaurant.OpeningTime,
+			&restaurant.ClosingTime,
+			&restaurant.CreatedOn,
+			&restaurant.LastUpdatedOn,
+			&restaurant.CreatedBy,
+			&restaurant.LastModifiedBy,
+		); err != nil {
+			fmt.Println("err :  resto_repo_116", err.Error())
+			return nil, err
+		}
+		restaurant.Distance = utils.GetDistance(restLat, restLong, uLat, uLong)
+		//restaurant.DeliveryTimings = "30"
+		restaurant.IsFavorite = checkIfFev(restaurant.ID, ctx)
+		restaurants = append(restaurants, restaurant)
+	}
+
+	if err := rows.Err(); err != nil {
+		fmt.Println("err : resto_repo_126", err.Error())
+		return nil, err
+	}
+	//fmt.Println("restaurants ", restaurants)
+	return restaurants, nil
+}
+
 func (r *RestaurantRepository) GetRestaurants(ctx *fiber.Ctx) ([]models.DisplayRestaurant, error) {
 	var restaurants []models.DisplayRestaurant
 	var uLat, uLong = globals.GetSelectedAddLatLong()
@@ -111,7 +166,7 @@ func (r *RestaurantRepository) GetRestaurants(ctx *fiber.Ctx) ([]models.DisplayR
 			&restaurant.LastModifiedBy,
 		); err != nil {
 			fmt.Println("restaurant : ", restaurant)
-			fmt.Println("err : ", err)
+			fmt.Println("err : 167", err)
 			return nil, err
 		}
 		restaurant.Distance = utils.GetDistance(restLat, restLong, uLat, uLong)

@@ -42,7 +42,7 @@ func SetupRoutes(
 	refundController *controllers.RefundController,
 	restaurantController *controllers.RestaurantController,
 	emailController *controllers.EmailController,
-	offerController *controllers.OfferController
+	offerController *controllers.OfferController,
 ) {
 	api := app.Group("/api")
 
@@ -140,7 +140,6 @@ func SetupRoutes(
 	api.Post("/send-verify-email", emailController.SendVerifyEmailOtp)
 	api.Put("/verify-email/:entityToVerify", emailController.VerifyOTPHandler)
 
-
 	// api routes
 	api.Post("/offer", offerController.CreateOffer)
 	api.Get("/offer/:id", offerController.GetOffers)
@@ -155,6 +154,3 @@ func SetupRoutes(
 	api.Post("/applicable-entities", offerController.CreateApplicableEntity)
 	api.Get("/:offer_id/applicable-entities", offerController.GetEntitiesByOfferID)
 }
-
-
-
