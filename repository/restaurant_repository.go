@@ -119,7 +119,7 @@ func (r *RestaurantRepository) GetRestaurantsByIDs(ctx *fiber.Ctx, ids []string)
 			return nil, err
 		}
 		restaurant.Distance = utils.GetDistance(restLat, restLong, uLat, uLong)
-		//restaurant.DeliveryTimings = "30"
+		restaurant.DeliveryTimings = fmt.Sprintf("%.2f Mins", (restaurant.Distance/10)*60)
 		restaurant.IsFavorite = checkIfFev(restaurant.ID, ctx)
 		restaurants = append(restaurants, restaurant)
 	}
@@ -170,7 +170,7 @@ func (r *RestaurantRepository) GetRestaurants(ctx *fiber.Ctx) ([]models.DisplayR
 			return nil, err
 		}
 		restaurant.Distance = utils.GetDistance(restLat, restLong, uLat, uLong)
-		//restaurant.DeliveryTimings = "30"
+		restaurant.DeliveryTimings = fmt.Sprintf("%.2f Mins", (restaurant.Distance/10)*60)
 		restaurant.IsFavorite = checkIfFev(restaurant.ID, ctx)
 		restaurants = append(restaurants, restaurant)
 	}
