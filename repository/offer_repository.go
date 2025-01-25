@@ -1,0 +1,181 @@
+package repository
+
+import (
+	"context"
+	"dailzo/globals"
+	"dailzo/models"
+	"errors"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+type OfferRepository struct {
+	db *pgxpool.Pool
+}
+
+func NewOfferRepository(db *pgxpool.Pool) *OfferRepository {
+	return &OfferRepository{db: db}
+}
+
+func (r *OfferRepository) CreateOffer(ctx context.Context, offer models.Offer) (string, error) {
+	id := GetIdToRecord("OFFER")
+	query := `INSERT INTO offers 
+		(id, name, description, discount_percent, max_discount_amount, start_date, end_date, is_active, created_on, last_updated_on, created_by, last_modified_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		RETURNING id`
+
+	err := r.db.QueryRow(ctx, query,
+		id,
+		offer.Name,
+		offer.Description,
+		offer.DiscountPercent,
+		offer.MaxDiscountAmount,
+		offer.StartDate,
+		offer.EndDate,
+		offer.IsActive,
+		time.Now(),
+		time.Now(),
+		globals.GetLoogedInUserId(),
+		globals.GetLoogedInUserId(),
+	).Scan(&offer.ID)
+
+	if err != nil {
+		return "", err
+	}
+
+	return id, nil
+}
+
+func (r *OfferRepository) GetOffers(ctx context.Context) ([]models.Offer, error) {
+	query := `SELECT id, name, description, discount_percent, max_discount_amount, start_date, end_date, is_active, created_on, last_updated_on 
+	          FROM offers`
+
+	rows, err := r.db.Query(ctx, query)
+	if err == pgx.ErrNoRows {
+		return nil, errors.New("no offers found")
+	}
+	defer rows.Close()
+
+	offers, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.Offer])
+	if err != nil {
+		return nil, err
+	}
+
+	return offers, nil
+}
+
+func (r *OfferRepository) UpdateOffer(ctx context.Context, offer models.Offer) error {
+	query := `UPDATE offers 
+		SET name = $1, description = $2, discount_percent = $3, max_discount_amount = $4, start_date = $5, end_date = $6, is_active = $7, last_updated_on = $8, last_modified_by = $9 
+		WHERE id = $10`
+
+	_, err := r.db.Exec(ctx, query,
+		offer.Name,
+		offer.Description,
+		offer.DiscountPercent,
+		offer.MaxDiscountAmount,
+		offer.StartDate,
+		offer.EndDate,
+		offer.IsActive,
+		time.Now(),
+		globals.GetLoogedInUserId(),
+		offer.ID,
+	)
+
+	return err
+}
+
+func (r *OfferRepository) DeleteOffer(ctx context.Context, id string) error {
+	query := `DELETE FROM offers WHERE id = $1`
+	_, err := r.db.Exec(ctx, query, id)
+	return err
+}
+
+
+func (r *OfferRepository) CreateCondition(ctx context.Context, condition models.Condition) (string, error) {
+	id := GetIdToRecord("COND")
+	query := `INSERT INTO conditions 
+		(id, offer_id, condition_type, value, created_on, last_updated_on, created_by, last_modified_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING id`
+
+	err := r.db.QueryRow(ctx, query,
+		id,
+		condition.OfferID,
+		condition.ConditionType,
+		condition.Value,
+		time.Now(),
+		time.Now(),
+		globals.GetLoogedInUserId(),
+		globals.GetLoogedInUserId(),
+	).Scan(&condition.ID)
+
+	if err != nil {
+		return "", err
+	}
+
+	return id, nil
+}
+
+func (r *OfferRepository) GetConditionsByOfferID(ctx context.Context, offerID string) ([]models.Condition, error) {
+	query := `SELECT id, offer_id, condition_type, value, created_on, last_updated_on 
+	          FROM conditions WHERE offer_id = $1`
+
+	rows, err := r.db.Query(ctx, query, offerID)
+	if err == pgx.ErrNoRows {
+		return nil, errors.New("no conditions found for the offer")
+	}
+	defer rows.Close()
+
+	conditions, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.Condition])
+	if err != nil {
+		return nil, err
+	}
+
+	return conditions, nil
+}
+
+func (r *OfferRepository) CreateApplicableEntity(ctx context.Context, entity models.ApplicableEntity) (string, error) {
+	id := GetIdToRecord("APP_ENT")
+	query := `INSERT INTO applicable_entities 
+		(id, offer_id, entity_type, entity_id, created_on, last_updated_on, created_by, last_modified_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING id`
+
+	err := r.db.QueryRow(ctx, query,
+		id,
+		entity.OfferID,
+		entity.EntityType,
+		entity.EntityID,
+		time.Now(),
+		time.Now(),
+		globals.GetLoogedInUserId(),
+		globals.GetLoogedInUserId(),
+	).Scan(&entity.ID)
+
+	if err != nil {
+		return "", err
+	}
+
+	return id, nil
+}
+
+func (r *OfferRepository) GetEntitiesByOfferID(ctx context.Context, offerID string) ([]models.ApplicableEntity, error) {
+	query := `SELECT id, offer_id, entity_type, entity_id, created_on, last_updated_on 
+	          FROM applicable_entities WHERE offer_id = $1`
+
+	rows, err := r.db.Query(ctx, query, offerID)
+	if err == pgx.ErrNoRows {
+		return nil, errors.New("no entities found for the offer")
+	}
+	defer rows.Close()
+
+	entities, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.ApplicableEntity])
+	if err != nil {
+		return nil, err
+	}
+
+	return entities, nil
+}

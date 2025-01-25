@@ -26,6 +26,32 @@ CREATE TABLE IF NOT EXISTS public.addresses
     CONSTRAINT "Address_pkey" PRIMARY KEY (id)
 );
 
+CREATE TABLE IF NOT EXISTS public.applicable_entities
+(
+    id character varying COLLATE pg_catalog."default" NOT NULL,
+    offer_id character varying COLLATE pg_catalog."default" NOT NULL,
+    entity_type text COLLATE pg_catalog."default" NOT NULL,
+    entity_id character varying COLLATE pg_catalog."default" NOT NULL,
+    created_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_updated_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by character varying COLLATE pg_catalog."default",
+    last_modified_by character varying COLLATE pg_catalog."default",
+    CONSTRAINT applicable_entities_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.conditions
+(
+    id character varying COLLATE pg_catalog."default" NOT NULL,
+    offer_id character varying COLLATE pg_catalog."default" NOT NULL,
+    condition_type text COLLATE pg_catalog."default" NOT NULL,
+    value text COLLATE pg_catalog."default" NOT NULL,
+    created_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_updated_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by character varying COLLATE pg_catalog."default",
+    last_modified_by character varying COLLATE pg_catalog."default",
+    CONSTRAINT conditions_pkey PRIMARY KEY (id)
+);
+
 CREATE TABLE IF NOT EXISTS public.consent
 (
     id character varying(255) COLLATE pg_catalog."default" NOT NULL,
@@ -57,7 +83,25 @@ CREATE TABLE IF NOT EXISTS public.food_products
     last_modified_by character(36) COLLATE pg_catalog."default",
     rating double precision,
     total_ratings integer,
+    restaurant character(36) COLLATE pg_catalog."default",
     CONSTRAINT food_product_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.offers
+(
+    id character varying COLLATE pg_catalog."default" NOT NULL,
+    name text COLLATE pg_catalog."default" NOT NULL,
+    description text COLLATE pg_catalog."default",
+    discount_percent double precision,
+    max_discount_amount double precision,
+    start_date date NOT NULL,
+    end_date date NOT NULL,
+    is_active boolean NOT NULL DEFAULT true,
+    created_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_updated_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by character varying COLLATE pg_catalog."default",
+    last_modified_by character varying COLLATE pg_catalog."default",
+    CONSTRAINT offers_pkey PRIMARY KEY (id)
 );
 
 CREATE TABLE IF NOT EXISTS public.order_items
@@ -191,7 +235,7 @@ CREATE TABLE IF NOT EXISTS public.restaurants
     last_updated_on timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by character varying COLLATE pg_catalog."default",
     last_modified_by character varying COLLATE pg_catalog."default",
-    rating double precision,
+    rating double precision DEFAULT 0,
     total_ratings integer,
     CONSTRAINT restaurants_pkey PRIMARY KEY (id)
 );
@@ -210,6 +254,8 @@ CREATE TABLE IF NOT EXISTS public.users
     last_modified_by character varying(255) COLLATE pg_catalog."default",
     mobileno character varying(20) COLLATE pg_catalog."default",
     middle_name character varying(255) COLLATE pg_catalog."default",
+    favourite_restaurants text COLLATE pg_catalog."default",
+    fevourite_foods text COLLATE pg_catalog."default",
     CONSTRAINT users_pkey PRIMARY KEY (id),
     CONSTRAINT users_email_key UNIQUE (email),
     CONSTRAINT users_username_key UNIQUE (username)
@@ -236,6 +282,20 @@ ALTER TABLE IF EXISTS public.addresses
     ON DELETE NO ACTION;
 
 
+ALTER TABLE IF EXISTS public.applicable_entities
+    ADD CONSTRAINT applicable_entities_offer_id_fkey FOREIGN KEY (offer_id)
+    REFERENCES public.offers (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.conditions
+    ADD CONSTRAINT conditions_offer_id_fkey FOREIGN KEY (offer_id)
+    REFERENCES public.offers (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
 ALTER TABLE IF EXISTS public.consent
     ADD CONSTRAINT fk_created_by FOREIGN KEY (created_by)
     REFERENCES public.users (id) MATCH SIMPLE
@@ -251,17 +311,24 @@ ALTER TABLE IF EXISTS public.consent
 
 
 ALTER TABLE IF EXISTS public.food_products
-    ADD CONSTRAINT food_product_created_by_fkey FOREIGN KEY (created_by)
+    ADD CONSTRAINT fk_created_by FOREIGN KEY (created_by)
     REFERENCES public.users (id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION;
 
 
 ALTER TABLE IF EXISTS public.food_products
-    ADD CONSTRAINT food_product_last_modified_by_fkey FOREIGN KEY (last_modified_by)
+    ADD CONSTRAINT fk_last_modified_by FOREIGN KEY (last_modified_by)
     REFERENCES public.users (id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.food_products
+    ADD CONSTRAINT fk_restaurant FOREIGN KEY (restaurant)
+    REFERENCES public.restaurants (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE SET NULL;
 
 
 ALTER TABLE IF EXISTS public.order_items
@@ -395,13 +462,6 @@ ALTER TABLE IF EXISTS public.product_variants
     REFERENCES public.users (id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION;
-
-
-ALTER TABLE IF EXISTS public.product_variants
-    ADD CONSTRAINT product_variant_product_id_fkey FOREIGN KEY (product_id)
-    REFERENCES public.food_products (id) MATCH SIMPLE
-    ON UPDATE NO ACTION
-    ON DELETE CASCADE;
 
 
 ALTER TABLE IF EXISTS public.ratings
