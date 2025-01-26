@@ -116,7 +116,7 @@ func (r *FoodProductRepository) GetFoodProductWithEntity(ctx *fiber.Ctx, entity 
 	mapCatToFoodProdToReturn := make(map[string]models.DisplayFoodCatagoryProducts)
 
 	// Query for food products
-	query := `SELECT name, description, price, category, restaurant, is_active
+	query := `SELECT name, description, category, restaurant, is_active
 	          FROM food_products WHERE is_active = true AND (category ILIKE $1 OR name ILIKE $1)`
 	rows, err := r.db.Query(ctx.Context(), query, entity)
 	if err != nil {
@@ -131,7 +131,6 @@ func (r *FoodProductRepository) GetFoodProductWithEntity(ctx *fiber.Ctx, entity 
 		if err := rows.Scan(
 			&foodProduct.Name,
 			&foodProduct.Description,
-			&foodProduct.Price,
 			&foodProduct.Category,
 			&foodProduct.RestaurantId,
 			&foodProduct.IsActive,
@@ -152,7 +151,7 @@ func (r *FoodProductRepository) GetFoodProductWithEntity(ctx *fiber.Ctx, entity 
 	}
 
 	// Fetch restaurants
-	restaurants, err := r.rp.GetRestaurantsByIDs(ctx, restIds)
+	restaurants, err := r.rp.GetDisplayRestaurants(ctx, restIds)
 	if err != nil {
 		fmt.Println("Error Fetching Restaurants:", err)
 		return nil, err
@@ -169,7 +168,7 @@ func (r *FoodProductRepository) GetFoodProductWithEntity(ctx *fiber.Ctx, entity 
 					mapCatToFoodProdToReturn[foodProduct.Category] = existingProduct
 				} else {
 					// Create new category product with restaurant
-					foodProduct.Restaurants = []models.DisplayRestaurant{restaurant}
+					foodProduct.Restaurants = []models.DisplayRestaurantWithOffers{restaurant}
 					mapCatToFoodProdToReturn[foodProduct.Category] = foodProduct
 				}
 			}

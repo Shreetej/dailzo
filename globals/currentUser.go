@@ -6,7 +6,9 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/session"
 )
 
-var Store = session.New() // Initialize session store
+var Store = session.New(session.Config{
+	Expiration: 0, // Session lasts until the browser is closed or refreshed
+}) // Initialize session store
 // GlobalStruct is a structure that will be accessed globally
 type LoggedInUser struct {
 	UserID         string

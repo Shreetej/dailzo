@@ -56,6 +56,11 @@ func SetupRoutes(
 	api.Delete("/users/:id", middleware.JWTMiddleware(), userController.DeleteUser)
 	api.Get("/users", middleware.JWTMiddleware(), userController.GetUsers)
 
+	api.Put("/addFevResto", middleware.JWTMiddleware(), userController.UpdateFavoriteRestaurant)
+	api.Put("/updateFevResto", middleware.JWTMiddleware(), userController.UpdateFavoriteFoods)
+	api.Put("/removeFevFood", middleware.JWTMiddleware(), userController.RemoveFavoriteFood)
+	api.Put("/removeFevResto", middleware.JWTMiddleware(), userController.RemoveFavoriteRestaurant)
+
 	api.Post("/address", middleware.JWTMiddleware(), addressController.CreateAddress)
 	api.Get("/address", middleware.JWTMiddleware(), addressController.GetAddresses)
 	api.Get("/address/:id", middleware.JWTMiddleware(), addressController.GetAddressById)

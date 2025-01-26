@@ -68,7 +68,7 @@ func (c *OfferController) DeleteOffer(ctx *fiber.Ctx) error {
 
 // Create a new condition
 func (c *OfferController) CreateCondition(ctx *fiber.Ctx) error {
-	var condition models.Condition
+	var condition models.OfferCondition
 	if err := ctx.BodyParser(&condition); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid input"})
 	}
@@ -96,7 +96,7 @@ func (c *OfferController) GetConditionsByOfferID(ctx *fiber.Ctx) error {
 
 // Create a new applicable entity
 func (c *OfferController) CreateApplicableEntity(ctx *fiber.Ctx) error {
-	var entity models.ApplicableEntity
+	var entity models.OfferApplicableEntity
 	if err := ctx.BodyParser(&entity); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid input"})
 	}

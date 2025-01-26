@@ -172,3 +172,63 @@ func (c *UserController) DeleteUser(ctx *fiber.Ctx) error {
 		"message": "User deleted successfully",
 	})
 }
+
+// UpdateFavoriteRestaurant updates the user's favorite restaurants
+func (c *UserController) UpdateFavoriteRestaurant(ctx *fiber.Ctx) error {
+	newFavoriteRestaurant := ctx.FormValue("restaurant")
+	if newFavoriteRestaurant == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "restaurant is required"})
+	}
+
+	err := c.repo.UpdateFavoriteRestaurant(ctx, newFavoriteRestaurant)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return ctx.JSON(fiber.Map{"message": "Favorite restaurant updated successfully"})
+}
+
+// UpdateFavoriteFoods updates the user's favorite foods
+func (c *UserController) UpdateFavoriteFoods(ctx *fiber.Ctx) error {
+	newFavoriteFood := ctx.FormValue("food")
+	if newFavoriteFood == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "food is required"})
+	}
+
+	err := c.repo.UpdateFavoriteFoods(ctx, newFavoriteFood)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return ctx.JSON(fiber.Map{"message": "Favorite food updated successfully"})
+}
+
+// RemoveFavoriteRestaurant removes a restaurant from the user's favorite restaurants
+func (c *UserController) RemoveFavoriteRestaurant(ctx *fiber.Ctx) error {
+	restaurantToRemove := ctx.FormValue("restaurant")
+	if restaurantToRemove == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "restaurant is required"})
+	}
+
+	err := c.repo.RemoveFavoriteRestaurant(ctx, restaurantToRemove)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return ctx.JSON(fiber.Map{"message": "Favorite restaurant removed successfully"})
+}
+
+// RemoveFavoriteFood removes a food from the user's favorite foods
+func (c *UserController) RemoveFavoriteFood(ctx *fiber.Ctx) error {
+	foodToRemove := ctx.FormValue("food")
+	if foodToRemove == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "food is required"})
+	}
+
+	err := c.repo.RemoveFavoriteFood(ctx, foodToRemove)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return ctx.JSON(fiber.Map{"message": "Favorite food removed successfully"})
+}

@@ -4,8 +4,10 @@ import (
 	"context"
 	"dailzo/globals"
 	"dailzo/models"
+	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -126,4 +128,173 @@ func (r *UserRepository) DeleteUser(ctx context.Context, userID string) error {
 	query := `DELETE FROM users WHERE id = $1`
 	_, err := r.db.Exec(ctx, query, userID)
 	return err
+}
+
+func (r *UserRepository) UpdateFavoriteRestaurant(ctx *fiber.Ctx, newFavoriteRestaurant string) error {
+	var currentFavorites sql.NullString
+	sess, err := globals.Store.Get(ctx)
+	if err != nil {
+		return err
+	}
+	userID := sess.Get("userID")
+	fmt.Println(userID)
+	// Retrieve the current favoriteRestaurant value
+	query := `SELECT favourite_restaurants FROM users WHERE id = $1`
+
+	err = r.db.QueryRow(ctx.Context(), query, userID).Scan(&currentFavorites)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			fmt.Println("User not found for email:")
+			return errors.New("user not found")
+		}
+		fmt.Printf("Error executing query: %v\n", err)
+		return err
+	}
+	// Append the new favorite restaurant to the existing value
+	if currentFavorites.Valid && currentFavorites.String != "" {
+		currentFavorites.String = currentFavorites.String + "," + newFavoriteRestaurant
+	} else {
+		currentFavorites.String = newFavoriteRestaurant
+	}
+
+	// Update the favoriteRestaurant field with the new value
+	updateQuery := `UPDATE users SET favourite_restaurants = $1 WHERE id = $2`
+	_, err = r.db.Exec(ctx.Context(), updateQuery, currentFavorites.String, userID)
+	if err != nil {
+		return err
+	}
+	sess.Set("favouriteRestaurants", currentFavorites.String)
+	if err := sess.Save(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *UserRepository) UpdateFavoriteFoods(ctx *fiber.Ctx, newFavoriteFood string) error {
+	var currentFavorites sql.NullString
+	sess, err := globals.Store.Get(ctx)
+	if err != nil {
+		return err
+	}
+	userID := sess.Get("userID")
+	// Retrieve the current favoriteFoods value
+	query := `SELECT favorite_foods FROM users WHERE id = $1`
+	err = r.db.QueryRow(ctx.Context(), query, userID).Scan(&currentFavorites)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			fmt.Println("User not found for email:")
+			return errors.New("user not found")
+		}
+		fmt.Printf("Error executing query: %v\n", err)
+		return err
+	}
+
+	// Append the new favorite food to the existing value
+	if currentFavorites.Valid && currentFavorites.String != "" {
+		currentFavorites.String = currentFavorites.String + "," + newFavoriteFood
+	} else {
+		currentFavorites.String = newFavoriteFood
+	}
+
+	// Update the favoriteFoods field with the new value
+	updateQuery := `UPDATE users SET favorite_foods = $1 WHERE id = $2`
+	_, err = r.db.Exec(ctx.Context(), updateQuery, currentFavorites, userID)
+	if err != nil {
+		return err
+	}
+	sess.Set("favouriteFoods", currentFavorites.String)
+	if err := sess.Save(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *UserRepository) RemoveFavoriteFood(ctx *fiber.Ctx, foodToRemove string) error {
+	var currentFavorites string
+	sess, err := globals.Store.Get(ctx)
+	if err != nil {
+		return err
+	}
+	userID := sess.Get("userID")
+
+	// Retrieve the current favoriteFoods value
+	query := `SELECT favorite_foods FROM users WHERE id = $1`
+	err = r.db.QueryRow(ctx.Context(), query, userID).Scan(&currentFavorites)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			fmt.Println("User not found for ID:", userID)
+			return errors.New("user not found")
+		}
+		fmt.Printf("Error executing query: %v\n", err)
+		return err
+	}
+
+	// Remove the specified food from the list
+	favorites := strings.Split(currentFavorites, ",")
+	for i, favorite := range favorites {
+		if strings.TrimSpace(favorite) == foodToRemove {
+			favorites = append(favorites[:i], favorites[i+1:]...)
+			break
+		}
+	}
+	newFavorites := strings.Join(favorites, ",")
+
+	// Update the favoriteFoods field with the new value
+	updateQuery := `UPDATE users SET favorite_foods = $1 WHERE id = $2`
+	_, err = r.db.Exec(ctx.Context(), updateQuery, newFavorites, userID)
+	if err != nil {
+		return err
+	}
+
+	sess.Set("favouriteFoods", newFavorites)
+	if err := sess.Save(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *UserRepository) RemoveFavoriteRestaurant(ctx *fiber.Ctx, restaurantToRemove string) error {
+	var currentFavorites string
+	sess, err := globals.Store.Get(ctx)
+	if err != nil {
+		return err
+	}
+	userID := sess.Get("userID")
+
+	// Retrieve the current favoriteRestaurants value
+	query := `SELECT favourite_restaurants FROM users WHERE id = $1`
+	err = r.db.QueryRow(ctx.Context(), query, userID).Scan(&currentFavorites)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			fmt.Println("User not found for ID:", userID)
+			return errors.New("user not found")
+		}
+		fmt.Printf("Error executing query: %v\n", err)
+		return err
+	}
+
+	// Remove the specified restaurant from the list
+	favorites := strings.Split(currentFavorites, ",")
+	for i, favorite := range favorites {
+		if strings.TrimSpace(favorite) == restaurantToRemove {
+			favorites = append(favorites[:i], favorites[i+1:]...)
+			break
+		}
+	}
+	newFavorites := strings.Join(favorites, ",")
+
+	// Update the favoriteRestaurants field with the new value
+	updateQuery := `UPDATE users SET favourite_restaurants = $1 WHERE id = $2`
+	_, err = r.db.Exec(ctx.Context(), updateQuery, newFavorites, userID)
+	if err != nil {
+		return err
+	}
+
+	sess.Set("favouriteRestaurants", currentFavorites)
+	if err := sess.Save(); err != nil {
+		return err
+	}
+
+	return nil
 }
