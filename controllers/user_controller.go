@@ -45,7 +45,7 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 	}
 
 	// Check user in database
-	dbUser, err := c.repo.GetUserByEmail(ctx.Context(), user.Email)
+	dbUser, err := c.repo.GetUserByEmail(ctx, user.Email)
 	fmt.Println(dbUser)
 	if err != nil {
 		fmt.Println(err)
@@ -84,12 +84,11 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 
 	// Add user to shared state
 
-	globals.UpdateLoggedInUser(dbUser.ID, dbUser.Username, "", favouriteRestaurants, favouriteFoods)
 	sess, err := globals.Store.Get(ctx)
 	sess.Set("userID", dbUser.ID)
 	sess.Set("username", dbUser.Username)
-	sess.Set("favouriteFoods", "favouriteFoods")
-	sess.Set("favouriteRestaurants", "REST1733253623")
+	sess.Set("favouriteFoods", favouriteFoods)
+	sess.Set("favouriteRestaurants", favouriteRestaurants)
 	sess.Save()
 	return ctx.JSON(fiber.Map{"token": token})
 }

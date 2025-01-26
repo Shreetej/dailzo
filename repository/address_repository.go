@@ -80,11 +80,41 @@ func (r *AddressRepository) GetAddresses(ctx context.Context) ([]models.DisplayA
 
 func (r *AddressRepository) GetAddressByID(ctx context.Context, id string) (models.Address, error) {
 	var address models.Address
-	println("id_______", id)
 	query := `SELECT id, address_line_1, address_line_2, address_line_3, zip_pin, benchmark, user_id, city, state, type, longitude, latitude, mobileno, name 
 	          FROM addresses WHERE id = $1`
 
 	err := r.db.QueryRow(ctx, query, id).Scan(
+		&address.ID,
+		&address.AddressLine1,
+		&address.AddressLine2,
+		&address.AddressLine3,
+		&address.ZIPPin,
+		&address.Benchmark,
+		&address.UserID,
+		&address.City,
+		&address.State,
+		&address.Type,
+		&address.Longitude,
+		&address.Latitude,
+		&address.MobileNo,
+		&address.Name,
+	)
+
+	if err != nil {
+		fmt.Println("Addresses : ", address)
+		fmt.Println("err : 106", err)
+		return address, err
+	}
+
+	return address, nil
+}
+
+func (r *AddressRepository) GetAddressByUserID(ctx context.Context, usrId string) (models.Address, error) {
+	var address models.Address
+	query := `SELECT id, address_line_1, address_line_2, address_line_3, zip_pin, benchmark, user_id, city, state, type, longitude, latitude, mobileno, name 
+	          FROM addresses WHERE user_id = $1 LIMIT 1`
+
+	err := r.db.QueryRow(ctx, query, usrId).Scan(
 		&address.ID,
 		&address.AddressLine1,
 		&address.AddressLine2,

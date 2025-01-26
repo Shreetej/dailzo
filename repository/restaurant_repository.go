@@ -134,9 +134,7 @@ func (r *RestaurantRepository) GetRestaurantsByIDs(ctx *fiber.Ctx, ids []string)
 
 func (r *RestaurantRepository) GetRestaurants(ctx *fiber.Ctx) ([]models.DisplayRestaurant, error) {
 	var restaurants []models.DisplayRestaurant
-	var uLat, uLong = globals.GetSelectedAddLatLong()
 	println(globals.GetLoogedInUserId())
-	//username := sess.Get("username")
 	query := `SELECT r.id, r.name, r.rating, r.address, a.longitude, a.latitude, r.phone_number, r.email, r.opening_time, r.closing_time, r.created_on, r.last_updated_on, r.created_by, r.last_modified_by
 			  FROM restaurants r JOIN addresses a ON r.address = a.id`
 
@@ -169,7 +167,7 @@ func (r *RestaurantRepository) GetRestaurants(ctx *fiber.Ctx) ([]models.DisplayR
 			fmt.Println("err : 167", err)
 			return nil, err
 		}
-		restaurant.Distance = utils.GetDistance(restLat, restLong, uLat, uLong)
+		restaurant.Distance = getDistance(restLat, restLong, ctx)
 		restaurant.DeliveryTimings = fmt.Sprintf("%.2f Mins", (restaurant.Distance/10)*60)
 		restaurant.IsFavorite = checkIfFev(restaurant.ID, ctx)
 		restaurants = append(restaurants, restaurant)
@@ -202,6 +200,32 @@ func checkIfFev(resuarentId string, ctx *fiber.Ctx) bool {
 	}
 	return strings.Contains(favouriteRestaurantsStr, resuarentId)
 }
+
+func getDistance(restLat, restLong float64, ctx *fiber.Ctx) float64 {
+	sess, err := globals.Store.Get(ctx)
+	if err != nil {
+		return 0.0
+	}
+	addressLatitude := sess.Get("latitude")
+	addressLongitude := sess.Get("longitude")
+	if addressLatitude == nil || addressLongitude == nil {
+		fmt.Println("addressLatitude is nil OR addressLongitude is nil")
+		return 0.0
+	}
+
+	addressLatitudeFloat, ok := addressLatitude.(float64)
+	if !ok {
+		fmt.Println("addressLatitudefloat is not a float64")
+		return 0.0
+	}
+	addressLongitudeFloat, ok := addressLongitude.(float64)
+	if !ok {
+		fmt.Println("addressLongitudeFloat is not a float64")
+		return 0.0
+	}
+	return utils.GetDistance(restLat, restLong, addressLatitudeFloat, addressLongitudeFloat)
+}
+
 func (r *RestaurantRepository) GetRestaurantsByNearLocations(ctx context.Context, name string) ([]models.Restaurant, error) {
 	var restaurants []models.Restaurant
 	query := `SELECT id, name, address, phone_number, email, opening_time, closing_time, created_on, last_updated_on, created_by, last_modified_by

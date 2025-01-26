@@ -2,22 +2,25 @@ package repository
 
 import (
 	"context"
+	"dailzo/globals"
 	"dailzo/models"
 	"errors"
 	"fmt"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserRepository struct {
-	db *pgxpool.Pool
+	db   *pgxpool.Pool
+	addr *AddressRepository
 }
 
 func NewUserRepository(db *pgxpool.Pool) *UserRepository {
-	return &UserRepository{db: db}
+	return &UserRepository{db: db, addr: NewAddressRepository(db)}
 }
 
 func (r *UserRepository) CreateUser(ctx context.Context, user models.User) (string, error) {
@@ -68,10 +71,10 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id string) (*models.Us
 	return &user, err
 }
 
-func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+func (r *UserRepository) GetUserByEmail(ctx *fiber.Ctx, email string) (*models.User, error) {
 	var user models.User
 	query := `SELECT id, username, email, mobileno, password, favourite_restaurants, fevourite_foods FROM users WHERE email = $1`
-	err := r.db.QueryRow(ctx, query, email).Scan(&user.ID, &user.Username, &user.Email, &user.MobileNo, &user.Password, &user.FavouriteRestaurants, &user.FavouriteFoods)
+	err := r.db.QueryRow(ctx.Context(), query, email).Scan(&user.ID, &user.Username, &user.Email, &user.MobileNo, &user.Password, &user.FavouriteRestaurants, &user.FavouriteFoods)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			fmt.Println("User not found for email:", email)
@@ -80,9 +83,16 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 		fmt.Printf("Error executing query: %v\n", err)
 		return nil, err
 	}
-	// if err == pgx.ErrNoRows {
-	// 	return nil, errors.New("user not found")
-	// }
+	address, err := r.addr.GetAddressByUserID(ctx.Context(), user.ID)
+	if err == pgx.ErrNoRows {
+		return nil, errors.New("user not found")
+	}
+	sess, err := globals.Store.Get(ctx)
+	sess.Set("addrId", address.ID)
+	sess.Set("longitude", address.Longitude)
+	sess.Set("latitude", address.Latitude)
+	sess.Set("mobile", address.MobileNo)
+	sess.Save()
 	return &user, err
 }
 
