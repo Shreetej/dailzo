@@ -5,6 +5,7 @@ import (
 	"dailzo/globals"
 	"dailzo/models"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -49,17 +50,42 @@ func (r *OfferRepository) CreateOffer(ctx context.Context, offer models.Offer) (
 }
 
 func (r *OfferRepository) GetOffers(ctx context.Context) ([]models.Offer, error) {
+	fmt.Print("in offers")
+	var offers []models.Offer
 	query := `SELECT id, name, description, discount_percent, max_discount_amount, start_date, end_date, is_active, created_on, last_updated_on 
 	          FROM offers`
 
 	rows, err := r.db.Query(ctx, query)
-	if err == pgx.ErrNoRows {
+	if err != nil {
 		return nil, errors.New("no offers found")
 	}
 	defer rows.Close()
+	for rows.Next() {
+		var offer models.Offer
+		if err = rows.Scan(
+			&offer.ID,
+			&offer.Name,
+			&offer.Description,
+			&offer.DiscountPercent,
+			&offer.MaxDiscountAmount,
+			&offer.StartDate,
+			&offer.EndDate,
+			&offer.IsActive,
+			&offer.CreatedOn,
+			&offer.LastUpdatedOn,
+		); err != nil {
+			fmt.Print(err.Error())
 
-	offers, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.Offer])
+			return nil, err
+		}
+		offers = append(offers, offer)
+	}
+
+	//offers, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.Offer])
+
 	if err != nil {
+		fmt.Println("In outer try: get Offers", err.Error())
+
 		return nil, err
 	}
 
@@ -95,7 +121,7 @@ func (r *OfferRepository) DeleteOffer(ctx context.Context, id string) error {
 
 func (r *OfferRepository) CreateCondition(ctx context.Context, condition models.OfferCondition) (string, error) {
 	id := GetIdToRecord("COND")
-	query := `INSERT INTO conditions 
+	query := `INSERT INTO offer_conditions 
 		(id, offer_id, condition_type, value, created_on, last_updated_on, created_by, last_modified_by)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id`
@@ -112,29 +138,51 @@ func (r *OfferRepository) CreateCondition(ctx context.Context, condition models.
 	).Scan(&condition.ID)
 
 	if err != nil {
+		fmt.Println("In outer try: conditions", err.Error())
+
 		return "", err
 	}
 
 	return id, nil
 }
 
-func (r *OfferRepository) GetConditionsByOfferID(ctx context.Context, offerID string) ([]models.OfferCondition, error) {
-	query := `SELECT id, offer_id, condition_type, value, created_on, last_updated_on 
-	          FROM conditions WHERE offer_id = $1`
+// func (r *OfferRepository) GetConditionsByOfferID(ctx context.Context, offerID string) ([]models.OfferCondition, error) {
+// 	conditions := []models.OfferCondition{}
+// 	query := `SELECT id, offer_id, condition_type, value, created_on, last_updated_on
+// 	          FROM offer_conditions WHERE offer_id = $1`
 
-	rows, err := r.db.Query(ctx, query, offerID)
-	if err == pgx.ErrNoRows {
-		return nil, errors.New("no conditions found for the offer")
-	}
-	defer rows.Close()
+// 	rows, err := r.db.Query(ctx, query, offerID)
+// 	if err != nil {
+// 		fmt.Println("In outer try: get conditions", err.Error())
+// 		return nil, errors.New("no offers found")
+// 	}
 
-	conditions, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.OfferCondition])
-	if err != nil {
-		return nil, err
-	}
+// 	defer rows.Close()
 
-	return conditions, nil
-}
+// 	//conditions, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.OfferCondition])
+// 	for rows.Next() {
+// 		var offer_condition models.OfferCondition
+// 		if err = rows.Scan(
+// 			&offer_condition.ID,
+// 			&offer_condition.OfferID,
+// 			&offer_condition.ConditionType,
+// 			&offer_condition.Value,
+// 			&offer_condition.CreatedOn,
+// 			&offer_condition.LastUpdatedOn,
+// 		); err != nil {
+// 			fmt.Print(err.Error())
+
+// 			return nil, err
+// 		}
+// 		conditions = append(conditions, offer_condition)
+// 	if err != nil {
+// 		fmt.Println("In outer try: get conditions", err.Error())
+
+// 		return nil, err
+// 	}
+
+// 	return conditions, nil
+// }
 
 func (r *OfferRepository) CreateApplicableEntity(ctx context.Context, entity models.OfferApplicableEntity) (string, error) {
 	id := GetIdToRecord("APP_ENT")

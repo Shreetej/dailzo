@@ -147,15 +147,15 @@ func SetupRoutes(
 
 	// api routes
 	api.Post("/offer", offerController.CreateOffer)
-	api.Get("/offer/:id", offerController.GetOffers)
+	api.Get("/offers", offerController.GetOffers)
 	api.Put("/offer", offerController.UpdateOffer)
 	api.Delete("/offer/:id", offerController.DeleteOffer)
 
 	// Condition routes
 	api.Post("/conditions", offerController.CreateCondition)
-	api.Get("/:offer_id/conditions", offerController.GetConditionsByOfferID)
+	api.Get("/conditions/:offer_id", offerController.GetConditionsByOfferID)
 
 	// Applicable entity routes
 	api.Post("/applicable-entities", offerController.CreateApplicableEntity)
-	api.Get("/:offer_id/applicable-entities", offerController.GetEntitiesByOfferID)
+	api.Get("/applicable-entities/:offer_id", offerController.GetEntitiesByOfferID)
 }
