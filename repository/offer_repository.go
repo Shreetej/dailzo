@@ -226,6 +226,25 @@ func (r *OfferRepository) GetEntitiesByOfferID(ctx context.Context, offerID stri
 
 	return entities, nil
 }
+
+func (r *OfferRepository) GetConditionsByOfferID(ctx context.Context, offerID string) ([]models.OfferCondition, error) {
+	query := `SELECT id, offer_id, condition_type, value, created_on, last_updated_on 
+			  FROM offer_conditions WHERE offer_id = $1`
+
+	rows, err := r.db.Query(ctx, query, offerID)
+	if err == pgx.ErrNoRows {
+		return nil, errors.New("no conditions found for the offer")
+	}
+	defer rows.Close()
+
+	conditions, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.OfferCondition])
+	if err != nil {
+		return nil, err
+	}
+
+	return conditions, nil
+}
+
 func (r *OfferRepository) GetOffersByRestaurantID(ctx context.Context, restaurantID string) ([]models.DisplayOffer, error) {
 	query := `SELECT o.id, o.name, o.description, o.discount_percent, o.max_discount_amount, o.start_date, o.end_date, o.is_active, o.created_on, o.last_updated_on 
 			  FROM offers o
