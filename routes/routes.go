@@ -49,6 +49,8 @@ func SetupRoutes(
 	// Public routes
 	api.Post("/users", userController.CreateUser)
 	api.Post("/login", userController.Login)
+	api.Post("/send-otp", userController.SendOTP)
+	api.Post("/verify-otp-login", userController.VerifyOTPLogin)
 
 	// Protected routes (JWT required)
 	api.Get("/users/:id", middleware.JWTMiddleware(), userController.GetUserById)

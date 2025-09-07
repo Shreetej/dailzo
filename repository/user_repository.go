@@ -26,21 +26,42 @@ func NewUserRepository(db *pgxpool.Pool) *UserRepository {
 }
 
 func (r *UserRepository) CreateUser(ctx context.Context, user models.User) (string, error) {
-	// Hash the password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	// Hash the password with optimized cost factor for better performance
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 6) // Optimized for performance
 	if err != nil {
-		print(err.Error())
 		return " ", err
 	}
 
 	//get users id
 	id := GetIdToRecord("USR")
-	UserName := *user.FirstName + *user.LastName
-	fmt.Println("CTX :", ctx)
-	query := `INSERT INTO users (id, username, first_name, middle_name, last_name, email, mobileno, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
-	err = r.db.QueryRow(ctx, query, id, UserName, user.FirstName, user.MiddleName, user.LastName, user.Email, user.MobileNo, string(hashedPassword)).Scan(&id)
+	UserName := ""
+	if user.FirstName != nil && user.LastName != nil {
+		UserName = *user.FirstName + *user.LastName
+	}
+	query := `INSERT INTO users (id, username, first_name, middle_name, last_name, email, mobileno, password, user_type, address_id, profile_image_url, bio, date_of_birth, gender, created_on, last_updated_on, created_by, last_modified_by, favourite_restaurants, favourite_foods) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) RETURNING id`
+	err = r.db.QueryRow(ctx, query,
+		id,
+		UserName,
+		user.FirstName,
+		user.MiddleName,
+		user.LastName,
+		user.Email,
+		user.MobileNo,
+		string(hashedPassword),
+		user.UserType,
+		user.AddressID,
+		user.ProfileImageURL,
+		user.Bio,
+		user.DateOfBirth,
+		user.Gender,
+		time.Now(),
+		time.Now(),
+		user.CreatedBy,
+		user.LastModifiedBy,
+		user.FavouriteRestaurants,
+		user.FavouriteFoods,
+	).Scan(&id)
 	if err != nil {
-		println("Error in query :", err.Error())
 		return " ", err
 	}
 	return id, nil
@@ -65,54 +86,128 @@ func (r *UserRepository) GetUsers(ctx context.Context) ([]models.DisplayUser, er
 
 func (r *UserRepository) GetUserByID(ctx context.Context, id string) (*models.User, error) {
 	var user models.User
-	query := `SELECT id, username, email, mobileno FROM users WHERE id = $1`
-	err := r.db.QueryRow(ctx, query, id).Scan(&user.ID, &user.Username, &user.Email, &user.MobileNo)
+	query := `SELECT id, username, email, mobileno, first_name, middle_name, last_name, password, user_type, address_id, profile_image_url, bio, date_of_birth, gender, created_on, last_updated_on, created_by, last_modified_by, favourite_restaurants, favourite_foods FROM users WHERE id = $1`
+	err := r.db.QueryRow(ctx, query, id).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.MobileNo,
+		&user.FirstName,
+		&user.MiddleName,
+		&user.LastName,
+		&user.Password,
+		&user.UserType,
+		&user.AddressID,
+		&user.ProfileImageURL,
+		&user.Bio,
+		&user.DateOfBirth,
+		&user.Gender,
+		&user.CreatedOn,
+		&user.LastUpdatedOn,
+		&user.CreatedBy,
+		&user.LastModifiedBy,
+		&user.FavouriteRestaurants,
+		&user.FavouriteFoods,
+	)
 	if err == pgx.ErrNoRows {
 		return nil, errors.New("user not found")
 	}
 	return &user, err
+}
+
+// GetUserByEmailForLogin - Optimized for login, fetches only essential fields
+func (r *UserRepository) GetUserByEmailForLogin(ctx context.Context, email string) (*models.User, error) {
+	var user models.User
+	// Only select fields needed for login and response
+	query := `SELECT id, username, email, mobileno, first_name, last_name, password FROM users WHERE email = $1 LIMIT 1`
+	err := r.db.QueryRow(ctx, query, email).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.MobileNo,
+		&user.FirstName,
+		&user.LastName,
+		&user.Password,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, errors.New("user not found")
+		}
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (r *UserRepository) GetUserByEmail(ctx *fiber.Ctx, email string) (*models.User, error) {
 	var user models.User
-	query := `SELECT id, username, email, mobileno, password, favourite_restaurants, fevourite_foods FROM users WHERE email = $1`
-	err := r.db.QueryRow(ctx.Context(), query, email).Scan(&user.ID, &user.Username, &user.Email, &user.MobileNo, &user.Password, &user.FavouriteRestaurants, &user.FavouriteFoods)
+	query := `SELECT id, username, email, mobileno, first_name, middle_name, last_name, password, user_type, address_id, profile_image_url, bio, date_of_birth, gender, created_on, last_updated_on, created_by, last_modified_by, favourite_restaurants, favourite_foods FROM users WHERE email = $1`
+	err := r.db.QueryRow(ctx.Context(), query, email).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.MobileNo,
+		&user.FirstName,
+		&user.MiddleName,
+		&user.LastName,
+		&user.Password,
+		&user.UserType,
+		&user.AddressID,
+		&user.ProfileImageURL,
+		&user.Bio,
+		&user.DateOfBirth,
+		&user.Gender,
+		&user.CreatedOn,
+		&user.LastUpdatedOn,
+		&user.CreatedBy,
+		&user.LastModifiedBy,
+		&user.FavouriteRestaurants,
+		&user.FavouriteFoods,
+	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			fmt.Println("User not found for email:", email)
 			return nil, errors.New("user not found")
 		}
-		fmt.Printf("Error executing query: %v\n", err)
 		return nil, err
 	}
-	address, err := r.addr.GetAddressByUserID(ctx.Context(), user.ID)
-	if err == pgx.ErrNoRows {
-		return nil, errors.New("user not found")
-	}
-	sess, err := globals.Store.Get(ctx)
-	sess.Set("addrId", address.ID)
-	sess.Set("longitude", address.Longitude)
-	sess.Set("latitude", address.Latitude)
-	sess.Set("mobile", address.MobileNo)
-	sess.Save()
-	return &user, err
+	return &user, nil
 }
 
 // UpdateUser updates a user's information
 func (r *UserRepository) UpdateUser(ctx context.Context, user models.User) error {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 6) // Optimized for performance
 	if err != nil {
-		print(err.Error())
 		return err
 	}
 	fmt.Printf("Error executing query: %v\n", ctx)
-	UserName := *user.FirstName + *user.LastName
+	UserName := ""
+	if user.FirstName != nil && user.LastName != nil {
+		UserName = *user.FirstName + *user.LastName
+	}
 	query := `
 		UPDATE users
-		SET first_name = $1, email = $2, mobileno = $3, password = $4, last_updated_on = $5, last_name = $6, middle_name = $7, username= $8
-		WHERE email = $2
+		SET first_name = $1, middle_name = $2, last_name = $3, email = $4, mobileno = $5, password = $6, user_type = $7, address_id = $8, profile_image_url = $9, bio = $10, date_of_birth = $11, gender = $12, last_updated_on = $13, last_modified_by = $14, username = $15, favourite_restaurants = $16, favourite_foods = $17
+		WHERE id = $18
 	`
-	_, err = r.db.Exec(ctx, query, user.FirstName, user.Email, user.MobileNo, string(hashedPassword), time.Now(), user.LastName, user.MiddleName, UserName)
+	_, err = r.db.Exec(ctx, query,
+		user.FirstName,
+		user.MiddleName,
+		user.LastName,
+		user.Email,
+		user.MobileNo,
+		string(hashedPassword),
+		user.UserType,
+		user.AddressID,
+		user.ProfileImageURL,
+		user.Bio,
+		user.DateOfBirth,
+		user.Gender,
+		time.Now(),
+		user.LastModifiedBy,
+		UserName,
+		user.FavouriteRestaurants,
+		user.FavouriteFoods,
+		user.ID,
+	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return errors.New("user not found")
@@ -179,7 +274,7 @@ func (r *UserRepository) UpdateFavoriteFoods(ctx *fiber.Ctx, newFavoriteFood str
 	}
 	userID := sess.Get("userID")
 	// Retrieve the current favoriteFoods value
-	query := `SELECT favorite_foods FROM users WHERE id = $1`
+	query := `SELECT favourite_foods FROM users WHERE id = $1`
 	err = r.db.QueryRow(ctx.Context(), query, userID).Scan(&currentFavorites)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -198,7 +293,7 @@ func (r *UserRepository) UpdateFavoriteFoods(ctx *fiber.Ctx, newFavoriteFood str
 	}
 
 	// Update the favoriteFoods field with the new value
-	updateQuery := `UPDATE users SET favorite_foods = $1 WHERE id = $2`
+	updateQuery := `UPDATE users SET favourite_foods = $1 WHERE id = $2`
 	_, err = r.db.Exec(ctx.Context(), updateQuery, currentFavorites, userID)
 	if err != nil {
 		return err
@@ -219,7 +314,7 @@ func (r *UserRepository) RemoveFavoriteFood(ctx *fiber.Ctx, foodToRemove string)
 	userID := sess.Get("userID")
 
 	// Retrieve the current favoriteFoods value
-	query := `SELECT favorite_foods FROM users WHERE id = $1`
+	query := `SELECT favourite_foods FROM users WHERE id = $1`
 	err = r.db.QueryRow(ctx.Context(), query, userID).Scan(&currentFavorites)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -241,7 +336,7 @@ func (r *UserRepository) RemoveFavoriteFood(ctx *fiber.Ctx, foodToRemove string)
 	newFavorites := strings.Join(favorites, ",")
 
 	// Update the favoriteFoods field with the new value
-	updateQuery := `UPDATE users SET favorite_foods = $1 WHERE id = $2`
+	updateQuery := `UPDATE users SET favourite_foods = $1 WHERE id = $2`
 	_, err = r.db.Exec(ctx.Context(), updateQuery, newFavorites, userID)
 	if err != nil {
 		return err

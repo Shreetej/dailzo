@@ -245,17 +245,23 @@ CREATE TABLE IF NOT EXISTS public.users
     id character varying(255) COLLATE pg_catalog."default" NOT NULL,
     username character varying(255) COLLATE pg_catalog."default" NOT NULL,
     email character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    mobileno character varying(20) COLLATE pg_catalog."default",
     first_name character varying(255) COLLATE pg_catalog."default",
+    middle_name character varying(255) COLLATE pg_catalog."default",
     last_name character varying(255) COLLATE pg_catalog."default",
     password character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    user_type character varying(50) COLLATE pg_catalog."default",
+    address_id character varying(255) COLLATE pg_catalog."default",
+    profile_image_url text COLLATE pg_catalog."default",
+    bio text COLLATE pg_catalog."default",
+    date_of_birth character varying(10) COLLATE pg_catalog."default",
+    gender boolean,
     created_on timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     last_updated_on timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     created_by character varying(255) COLLATE pg_catalog."default",
     last_modified_by character varying(255) COLLATE pg_catalog."default",
-    mobileno character varying(20) COLLATE pg_catalog."default",
-    middle_name character varying(255) COLLATE pg_catalog."default",
     favourite_restaurants text COLLATE pg_catalog."default",
-    fevourite_foods text COLLATE pg_catalog."default",
+    favourite_foods text COLLATE pg_catalog."default",
     CONSTRAINT users_pkey PRIMARY KEY (id),
     CONSTRAINT users_email_key UNIQUE (email),
     CONSTRAINT users_username_key UNIQUE (username)
@@ -539,5 +545,21 @@ ALTER TABLE IF EXISTS public.users
     REFERENCES public.users (id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION;
+
+CREATE TABLE IF NOT EXISTS public.otps
+(
+    id character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    user_id character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    otp_code character varying(6) COLLATE pg_catalog."default" NOT NULL,
+    type character varying(10) COLLATE pg_catalog."default" NOT NULL,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    expires_at timestamp without time zone NOT NULL,
+    used boolean DEFAULT false,
+    CONSTRAINT otps_pkey PRIMARY KEY (id),
+    CONSTRAINT otps_user_id_fkey FOREIGN KEY (user_id)
+        REFERENCES public.users (id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE CASCADE
+);
 
 END;

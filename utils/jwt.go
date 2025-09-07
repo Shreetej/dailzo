@@ -7,13 +7,18 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-var jwtSecret = []byte(config.LoadConfig().JWTSecret)
+var jwtSecret []byte
+
+func init() {
+	jwtSecret = []byte(config.LoadConfig().JWTSecret)
+}
 
 func GenerateJWT(userID string) (string, error) {
+	now := time.Now()
 	claims := jwt.MapClaims{
 		"sub": userID,
-		"iat": time.Now().Unix(),
-		"exp": time.Now().Add(time.Hour * 24).Unix(),
+		"iat": now.Unix(),
+		"exp": now.Add(time.Hour * 24).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

@@ -27,7 +27,7 @@ type EmailRequest struct {
 // EmailRequest struct for parsing incoming POST data
 type EmailOTPVerify struct {
 	Otp   string `json:"to" validate:"required,email"`
-	email string `json:"subject" validate:"required"`
+	Email string `json:"subject" validate:"required"`
 }
 
 // NewEmailController returns a new instance of EmailController

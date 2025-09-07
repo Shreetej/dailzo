@@ -40,6 +40,7 @@ func main() {
 
 	// Repositories
 	userRepo := repository.NewUserRepository(db.DB)
+	otpRepo := repository.NewOTPRepository(db.DB)
 	addressRepo := repository.NewAddressRepository(db.DB)
 	foodProductRepo := repository.NewFoodProductRepository(db.DB)
 	productVariantRepo := repository.NewProductVariantRepository(db.DB)
@@ -62,7 +63,7 @@ func main() {
 	offerController := controllers.NewOfferController(offerRepo)
 
 	// Controllers
-	userController := controllers.NewUserController(userRepo)
+	userController := controllers.NewUserController(userRepo, otpRepo)
 	addressController := controllers.NewAddressController(addressRepo)
 	foodProductController := controllers.NewFoodProductController(foodProductRepo)
 	productVariantController := controllers.NewProductVariantController(productVariantRepo)

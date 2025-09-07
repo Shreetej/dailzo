@@ -3,20 +3,26 @@ package models
 import "time"
 
 type User struct {
-	ID                   string  `json:"id"`       // Unique identifier for the user
-	Username             string  `json:"username"` // Username for the user
-	Email                string  `json:"email"`    // Email address for the user
-	MobileNo             string  `json:"mobileno"`
-	FirstName            *string `json:"first_name"` // First name of the user
-	MiddleName           *string `json:"middle_name"`
-	LastName             *string `json:"last_name"`             // Last name of the user
-	Password             string  `json:"password"`              // Password hash for authentication
-	CreatedOn            string  `json:"created_on"`            // Timestamp when the user was created
-	LastUpdatedOn        string  `json:"last_updated_on"`       // Timestamp when the user was last updated
-	CreatedBy            *string `json:"created_by"`            // ID of the user who created this user (if applicable)
-	LastModifiedBy       *string `json:"last_modified_by"`      // ID of the user who last modified this user (if applicable)
-	FavouriteRestaurants *string `json:"favourite_restaurants"` // List of favorite restaurants
-	FavouriteFoods       *string `json:"favourite_foods"`       // List of favorite foods
+	ID                   string    `json:"id"`       // Unique identifier for the user
+	Username             string    `json:"username"` // Username for the user
+	Email                string    `json:"email"`    // Email address for the user
+	MobileNo             string    `json:"mobileno"`
+	FirstName            *string   `json:"first_name"` // First name of the user
+	MiddleName           *string   `json:"middle_name"`
+	LastName             *string   `json:"last_name"`         // Last name of the user
+	Password             string    `json:"password"`          // Password hash for authentication
+	UserType             string    `json:"user_type"`         // Type of user (e.g., admin, customer)
+	AddressID            *string   `json:"address_id"`        // Foreign key to the Address table
+	ProfileImageURL      *string   `json:"profile_image_url"` // URL to the user's profile image
+	Bio                  *string   `json:"bio"`               // Short biography or description of the user
+	DateOfBirth          *string   `json:"date_of_birth"`     // Date of birth of the user
+	Gender               *bool     `json:"gender"`
+	CreatedOn            time.Time `json:"created_on"`            // Timestamp when the user was created
+	LastUpdatedOn        time.Time `json:"last_updated_on"`       // Timestamp when the user was last updated
+	CreatedBy            *string   `json:"created_by"`            // ID of the user who created this user (if applicable)
+	LastModifiedBy       *string   `json:"last_modified_by"`      // ID of the user who last modified this user (if applicable)
+	FavouriteRestaurants *[]string `json:"favourite_restaurants"` // List of favorite restaurants
+	FavouriteFoods       *[]string `json:"favourite_foods"`       // List of favorite foods
 }
 
 type DisplayUser struct {
