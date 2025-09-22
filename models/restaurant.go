@@ -6,9 +6,13 @@ import (
 
 // Restaurant represents a restaurant record in the database
 type Restaurant struct {
-	ID             string    `json:"id"`               // Unique ID for the restaurant
-	Name           string    `json:"name"`             // Name of the restaurant
-	Address        string    `json:"address"`          // Address of the restaurant
+	ID             string    `json:"id"`           // Unique ID for the restaurant
+	DisplayName    string    `json:"display_name"` // Name of the restaurant
+	Name           string    `json:"name"`         // Name of the restaurant
+	OwnerFullName  string    `json:"owner_full_name"`
+	UserType       string    `json:"user_type"`
+	Address        string    `json:"address"` // Address of the restaurant
+	Mobile         string    `json:"mobile"`
 	PhoneNumber    string    `json:"phone_number"`     // Phone number of the restaurant
 	Email          string    `json:"email"`            // Email address of the restaurant
 	OpeningTime    time.Time `json:"opening_time"`     // Opening time of the restaurant
