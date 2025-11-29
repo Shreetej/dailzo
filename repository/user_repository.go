@@ -5,6 +5,7 @@ import (
 	"dailzo/globals"
 	"dailzo/models"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -34,10 +35,15 @@ func (r *UserRepository) CreateUser(ctx context.Context, user models.User) (stri
 
 	//get users id
 	id := GetIdToRecord("USR")
+	userJSON, _ := json.Marshal(user)
+	fmt.Print("USER: \n", string(userJSON))
 	UserName := ""
 	if user.FirstName != nil && user.LastName != nil {
 		UserName = *user.FirstName + *user.LastName
+	} else {
+		UserName = user.Email
 	}
+
 	query := `INSERT INTO users (id, username, first_name, middle_name, last_name, email, mobileno, password, user_type, address_id, profile_image_url, bio, date_of_birth, gender, created_on, last_updated_on, created_by, last_modified_by, favourite_restaurants, favourite_foods) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) RETURNING id`
 	err = r.db.QueryRow(ctx, query,
 		id,
@@ -62,6 +68,7 @@ func (r *UserRepository) CreateUser(ctx context.Context, user models.User) (stri
 		user.FavouriteFoods,
 	).Scan(&id)
 	if err != nil {
+		fmt.Printf("Error executing query: %v\n", err)
 		return " ", err
 	}
 	return id, nil

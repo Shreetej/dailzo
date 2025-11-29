@@ -88,3 +88,11 @@ func (c *RestaurantController) DeleteRestaurant(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Restaurant deleted successfully"})
 }
+
+func (c *RestaurantController) GetTopRatedRestaurants(ctx *fiber.Ctx) error {
+	restaurants, err := c.repo.GetTopRatedRestaurants(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch top-rated restaurants"})
+	}
+	return ctx.JSON(restaurants)
+}

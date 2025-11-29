@@ -429,6 +429,8 @@ func getDistance(restLat, restLong float64, ctx *fiber.Ctx) float64 {
 		fmt.Println("addressLongitudeFloat is not a float64")
 		return 0.0
 	}
+	fmt.Println("addressLatitudeFloat : ", addressLatitudeFloat)
+	fmt.Println("addressLongitudeFloat : ", addressLongitudeFloat)
 	return utils.GetDistance(restLat, restLong, addressLatitudeFloat, addressLongitudeFloat)
 }
 
@@ -533,4 +535,70 @@ func (r *RestaurantRepository) DeleteRestaurant(ctx context.Context, id string) 
 	query := `DELETE FROM restaurants WHERE id = $1`
 	_, err := r.db.Exec(ctx, query, id)
 	return err
+}
+
+func (r *RestaurantRepository) GetTopRatedRestaurants(ctx *fiber.Ctx) ([]models.DisplayRestaurant, error) {
+	var restaurants []models.DisplayRestaurant
+	sess, err := globals.Store.Get(ctx)
+	if err != nil {
+		fmt.Println("Error getting session:", err)
+		return nil, err
+	}
+
+	addressLatitude := sess.Get("latitude")
+	addressLongitude := sess.Get("longitude")
+
+	query := `
+	SELECT r.id, r.name, r.address, r.phone_number, r.email,  r.opening_time, r.closing_time,
+		COALESCE(AVG(rt.rating), 0) AS avg_rating,
+		COALESCE(
+			6371 * acos(
+			cos(radians($1)) * cos(radians(a.latitude)) *
+			cos(radians(a.longitude) - radians($2)) +
+			sin(radians($1)) * sin(radians(a.latitude))
+			), 0
+		) AS distance_km
+	FROM restaurants r
+	LEFT JOIN ratings rt ON r.id = rt.entity_id
+	JOIN addresses a ON r.address = a.id
+	GROUP BY r.id, r.name, r.address, r.phone_number, r.email,
+			r.opening_time, r.closing_time, a.latitude, a.longitude
+	HAVING AVG(rt.rating) < 5
+	ORDER BY avg_rating DESC `
+
+	rows, err := r.db.Query(ctx.Context(), query, addressLatitude, addressLongitude)
+	if err != nil {
+		fmt.Println("Error executing query:", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		fmt.Println("Processing row")
+		var restaurant models.DisplayRestaurant
+		if err := rows.Scan(
+			&restaurant.ID,
+			&restaurant.Name,
+			&restaurant.Address,
+			&restaurant.PhoneNumber,
+			&restaurant.Email,
+			&restaurant.OpeningTime,
+			&restaurant.ClosingTime,
+			&restaurant.Rating,
+			&restaurant.Distance,
+		); err != nil {
+			fmt.Println("Error scanning row:", err)
+			return nil, err
+		}
+		restaurant.DeliveryTimings = fmt.Sprintf("%.2f Mins", (restaurant.Distance/10)*60)
+		restaurant.IsFavorite = checkIfFev(restaurant.ID, ctx)
+		restaurants = append(restaurants, restaurant)
+	}
+
+	if err := rows.Err(); err != nil {
+		fmt.Println("Error iterating over rows:", err)
+		return nil, err
+	}
+
+	return restaurants, nil
 }
