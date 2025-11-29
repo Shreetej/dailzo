@@ -143,6 +143,18 @@ CREATE TABLE IF NOT EXISTS public.orders
     CONSTRAINT orders_pkey PRIMARY KEY (id)
 );
 
+CREATE TABLE IF NOT EXISTS public.otps
+(
+    id character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    user_id character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    otp_code character varying(6) COLLATE pg_catalog."default" NOT NULL,
+    type character varying(10) COLLATE pg_catalog."default" NOT NULL,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    expires_at timestamp without time zone NOT NULL,
+    used boolean DEFAULT false,
+    CONSTRAINT otps_pkey PRIMARY KEY (id)
+);
+
 CREATE TABLE IF NOT EXISTS public.payment_methods
 (
     id character varying COLLATE pg_catalog."default" NOT NULL,
@@ -246,6 +258,7 @@ CREATE TABLE IF NOT EXISTS public.restaurants
     last_modified_by character varying COLLATE pg_catalog."default",
     rating double precision DEFAULT 0,
     total_ratings integer,
+    image_path "char",
     CONSTRAINT restaurants_pkey PRIMARY KEY (id)
 );
 
@@ -409,6 +422,13 @@ ALTER TABLE IF EXISTS public.orders
     ON DELETE NO ACTION;
 
 
+ALTER TABLE IF EXISTS public.otps
+    ADD CONSTRAINT otps_user_id_fkey FOREIGN KEY (user_id)
+    REFERENCES public.users (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE CASCADE;
+
+
 ALTER TABLE IF EXISTS public.payment_methods
     ADD CONSTRAINT payment_methods_created_by_fkey FOREIGN KEY (created_by)
     REFERENCES public.users (id) MATCH SIMPLE
@@ -554,21 +574,5 @@ ALTER TABLE IF EXISTS public.users
     REFERENCES public.users (id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION;
-
-CREATE TABLE IF NOT EXISTS public.otps
-(
-    id character varying(255) COLLATE pg_catalog."default" NOT NULL,
-    user_id character varying(255) COLLATE pg_catalog."default" NOT NULL,
-    otp_code character varying(6) COLLATE pg_catalog."default" NOT NULL,
-    type character varying(10) COLLATE pg_catalog."default" NOT NULL,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    expires_at timestamp without time zone NOT NULL,
-    used boolean DEFAULT false,
-    CONSTRAINT otps_pkey PRIMARY KEY (id),
-    CONSTRAINT otps_user_id_fkey FOREIGN KEY (user_id)
-        REFERENCES public.users (id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE CASCADE
-);
 
 END;
