@@ -4,6 +4,8 @@ import (
 	"context"
 	"dailzo/globals"
 	"dailzo/models"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -133,4 +135,40 @@ func (r *ProductVariantRepository) DeleteProductVariant(ctx context.Context, id 
 	query := `DELETE FROM product_variants WHERE id = $1`
 	_, err := r.db.Exec(ctx, query, id)
 	return err
+}
+
+func (r *ProductVariantRepository) GetProductVariantsByProductId(ctx context.Context, productIds []string) (map[string][]models.ProductVariant, error) {
+	var productVariantsToReturn map[string][]models.ProductVariant
+	idsPGArray := fmt.Sprintf("{%s}", strings.Join(productIds, ","))
+	query := `SELECT id, product_id, variant_name, additional_description, price, quantity_available
+	          FROM product_variants WHERE product_id = ANY($1)`
+	rows, err := r.db.Query(ctx, query, idsPGArray)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var productVariant models.ProductVariant
+		if err := rows.Scan(
+			&productVariant.ID,
+			&productVariant.ProductID,
+			&productVariant.VariantName,
+			&productVariant.AdditionalDescription,
+			&productVariant.Price,
+			&productVariant.QuantityAvailable,
+		); err != nil {
+			return nil, err
+		}
+		if productVariantsToReturn == nil {
+			productVariantsToReturn = make(map[string][]models.ProductVariant)
+		}
+		productVariantsToReturn[productVariant.ProductID] = append(productVariantsToReturn[productVariant.ProductID], productVariant)
+
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return productVariantsToReturn, nil
 }

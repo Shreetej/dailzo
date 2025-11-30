@@ -14,12 +14,13 @@ import (
 )
 
 type RestaurantRepository struct {
-	db      *pgxpool.Pool
-	offRepo *OfferRepository
+	db                    *pgxpool.Pool
+	offRepo               *OfferRepository
+	foodProductRepository *FoodProductRepository
 }
 
 func NewRestaurantRepository(db *pgxpool.Pool) *RestaurantRepository {
-	return &RestaurantRepository{db: db, offRepo: NewOfferRepository(db)}
+	return &RestaurantRepository{db: db, offRepo: NewOfferRepository(db), foodProductRepository: NewFoodProductRepository(db)}
 }
 
 // CreateRestaurant inserts a new restaurant record into the database
@@ -537,8 +538,8 @@ func (r *RestaurantRepository) DeleteRestaurant(ctx context.Context, id string) 
 	return err
 }
 
-func (r *RestaurantRepository) GetTopRatedRestaurants(ctx *fiber.Ctx) ([]models.DisplayRestaurant, error) {
-	var restaurants []models.DisplayRestaurant
+func (r *RestaurantRepository) GetTopRatedRestaurants(ctx *fiber.Ctx) ([]models.DisplayRestaurantWithItems, error) {
+	var restaurants []models.DisplayRestaurantWithItems
 	sess, err := globals.Store.Get(ctx)
 	if err != nil {
 		fmt.Println("Error getting session:", err)
@@ -561,12 +562,12 @@ func (r *RestaurantRepository) GetTopRatedRestaurants(ctx *fiber.Ctx) ([]models.
 	FROM restaurants r
 	LEFT JOIN ratings rt ON r.id = rt.entity_id
 	JOIN addresses a ON r.address = a.id
+	WHERE a.city = $3
 	GROUP BY r.id, r.name, r.address, r.phone_number, r.email,
 			r.opening_time, r.closing_time, a.latitude, a.longitude
 	HAVING AVG(rt.rating) < 5
 	ORDER BY avg_rating DESC `
-
-	rows, err := r.db.Query(ctx.Context(), query, addressLatitude, addressLongitude)
+	rows, err := r.db.Query(ctx.Context(), query, addressLatitude, addressLongitude, "Springfield")
 	if err != nil {
 		fmt.Println("Error executing query:", err)
 		return nil, err
@@ -575,7 +576,7 @@ func (r *RestaurantRepository) GetTopRatedRestaurants(ctx *fiber.Ctx) ([]models.
 
 	for rows.Next() {
 		fmt.Println("Processing row")
-		var restaurant models.DisplayRestaurant
+		var restaurant models.DisplayRestaurantWithItems
 		if err := rows.Scan(
 			&restaurant.ID,
 			&restaurant.Name,
@@ -592,6 +593,12 @@ func (r *RestaurantRepository) GetTopRatedRestaurants(ctx *fiber.Ctx) ([]models.
 		}
 		restaurant.DeliveryTimings = fmt.Sprintf("%.2f Mins", (restaurant.Distance/10)*60)
 		restaurant.IsFavorite = checkIfFev(restaurant.ID, ctx)
+		foodProducts, err := r.foodProductRepository.GetFoodProductByRestaurant(ctx.Context(), restaurant.ID)
+		if err != nil {
+			fmt.Println("Error getting food products:", err)
+			return nil, err
+		}
+		restaurant.Items = foodProducts
 		restaurants = append(restaurants, restaurant)
 	}
 

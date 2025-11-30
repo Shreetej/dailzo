@@ -13,20 +13,21 @@ import (
 )
 
 type FoodProductRepository struct {
-	db *pgxpool.Pool
-	rp *RestaurantRepository
+	db                       *pgxpool.Pool
+	rp                       *RestaurantRepository
+	productVariantRepository *ProductVariantRepository
 }
 
 func NewFoodProductRepository(db *pgxpool.Pool) *FoodProductRepository {
-	return &FoodProductRepository{db: db, rp: NewRestaurantRepository(db)}
+	return &FoodProductRepository{db: db, productVariantRepository: NewProductVariantRepository(db)}
 }
 
 func (r *FoodProductRepository) CreateFoodProduct(ctx context.Context, foodProduct models.FoodProduct) (string, error) {
 
 	id := GetIdToRecord("FPROD")
 	query := `INSERT INTO food_products 
-    (id, name, description, category, type, price, image_url, is_active, created_on, last_updated_on, created_by, last_modified_by) 
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+    (id, name, description, category, type, price, image_url, is_active, created_on, last_updated_on, created_by, last_modified_by, restaurant) 
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
     RETURNING id`
 
 	// Assuming 'db' is your database connection and 'ctx' is the context
@@ -43,8 +44,10 @@ func (r *FoodProductRepository) CreateFoodProduct(ctx context.Context, foodProdu
 		time.Now(),
 		globals.GetLoogedInUserId(),
 		globals.GetLoogedInUserId(),
+		foodProduct.RestaurantId,
 	).Scan(&foodProduct.ID)
 	println("User in query :", globals.GetLoogedInUserId())
+	println("Restaurant in query :", foodProduct.RestaurantId)
 	if err != nil {
 		println("Error in query :", err.Error())
 		return " ", err
@@ -219,4 +222,44 @@ func (r *FoodProductRepository) DeleteFoodProduct(ctx context.Context, id string
 	query := `DELETE FROM food_products WHERE id = $1`
 	_, err := r.db.Exec(ctx, query, id)
 	return err
+}
+
+func (r *FoodProductRepository) GetFoodProductByRestaurant(ctx context.Context, id string) ([]models.DisplayFoodProductsWithVariants, error) {
+	var foodProductWithVriants []models.DisplayFoodProductsWithVariants
+	mapFoodProductIdsToFoodProduct := make(map[string]models.DisplayFoodProductsWithVariants)
+	var arrFoodProductIds []string
+	query := `SELECT id, name, description, price, category, type, image_url, is_active FROM food_products WHERE restaurant = $1`
+	rows, err := r.db.Query(ctx, query, id)
+	if err != nil {
+		return foodProductWithVriants, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		foodProductWithVriant := models.DisplayFoodProductsWithVariants{}
+		err = rows.Scan(
+			&foodProductWithVriant.ID,
+			&foodProductWithVriant.Name,
+			&foodProductWithVriant.Description,
+			&foodProductWithVriant.Price,
+			&foodProductWithVriant.Category,
+			&foodProductWithVriant.Type,
+			&foodProductWithVriant.ImageURL,
+			&foodProductWithVriant.IsActive,
+		)
+		arrFoodProductIds = append(arrFoodProductIds, foodProductWithVriant.ID)
+		//foodProductWithVriants = append(foodProductWithVriants, foodProductWithVriant)
+		mapFoodProductIdsToFoodProduct[foodProductWithVriant.ID] = foodProductWithVriant
+		if err != nil {
+			return nil, err
+		}
+	}
+	foodProductVariants, err := r.productVariantRepository.GetProductVariantsByProductId(ctx, arrFoodProductIds)
+	if err != nil {
+		return nil, err
+	}
+	for productId, foodProduct := range mapFoodProductIdsToFoodProduct {
+		foodProduct.Variants = foodProductVariants[productId]
+		foodProductWithVriants = append(foodProductWithVriants, foodProduct)
+	}
+	return foodProductWithVriants, nil
 }
