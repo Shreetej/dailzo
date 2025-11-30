@@ -6,6 +6,7 @@ import (
 	"dailzo/models"
 	"dailzo/utils"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -473,19 +474,56 @@ func (r *RestaurantRepository) GetRestaurantsByNearLocations(ctx context.Context
 	return restaurants, nil
 }
 
-func (r *RestaurantRepository) GetRestaurantsByName(ctx context.Context, name string) ([]models.Restaurant, error) {
-	var restaurants []models.Restaurant
-	query := `SELECT id, name, address, phone_number, email, opening_time, closing_time, created_on, last_updated_on, created_by, last_modified_by
-	          FROM restaurants WHERE name ILIKE $1`
+func (r *RestaurantRepository) GetRestaurantsByName(ctx *fiber.Ctx, name string) ([]models.DisplayRestaurantWithItems, error) {
+	var restaurants []models.DisplayRestaurantWithItems
+	decoded, _ := url.QueryUnescape(name) // "Dada Dosa"
+	nameToSearch := "%" + decoded + "%"
 
-	rows, err := r.db.Query(ctx, query, name)
+	fmt.Println("Searching restaurants with name:", nameToSearch)
+	var restaurantIds []string
+	sess, err := globals.Store.Get(ctx)
 	if err != nil {
+		return nil, err
+	}
+	addressLatitude := sess.Get("latitude")
+	addressLongitude := sess.Get("longitude")
+
+	addressLatitudeFloat, ok := addressLatitude.(float64)
+	if !ok {
+		fmt.Println("addressLatitudefloat is not a float64")
+		//return nil, err
+	}
+	addressLongitudeFloat, ok := addressLongitude.(float64)
+	if !ok {
+		fmt.Println("addressLongitudeFloat is not a float64")
+		//return nil, err
+	}
+	query := `
+	SELECT r.id, r.name, r.address, r.phone_number, r.email,  r.opening_time, r.closing_time,
+		COALESCE(AVG(rt.rating), 0) AS avg_rating,
+		COALESCE(
+			6371 * acos(
+			cos(radians($1)) * cos(radians(a.latitude)) *
+			cos(radians(a.longitude) - radians($2)) +
+			sin(radians($1)) * sin(radians(a.latitude))
+			), 0
+		) AS distance_km
+	FROM restaurants r
+	LEFT JOIN ratings rt ON r.id = rt.entity_id
+	JOIN addresses a ON r.address = a.id
+	WHERE r.name ILIKE $3
+	GROUP BY r.id, r.name, r.address, r.phone_number, r.email,
+			r.opening_time, r.closing_time, a.latitude, a.longitude
+	ORDER BY avg_rating DESC`
+	rows, err := r.db.Query(ctx.Context(), query, addressLatitudeFloat, addressLongitudeFloat, nameToSearch)
+	if err != nil {
+		fmt.Println("Error executing query:", err)
 		return nil, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var restaurant models.Restaurant
+		var restaurant models.DisplayRestaurantWithItems
 		if err := rows.Scan(
 			&restaurant.ID,
 			&restaurant.Name,
@@ -494,17 +532,35 @@ func (r *RestaurantRepository) GetRestaurantsByName(ctx context.Context, name st
 			&restaurant.Email,
 			&restaurant.OpeningTime,
 			&restaurant.ClosingTime,
-			&restaurant.CreatedOn,
-			&restaurant.LastUpdatedOn,
-			&restaurant.CreatedBy,
-			&restaurant.LastModifiedBy,
+			&restaurant.Rating,
+			&restaurant.Distance,
 		); err != nil {
+			fmt.Println("Error scanning row:", err)
 			return nil, err
 		}
+		restaurant.DeliveryTimings = fmt.Sprintf("%.2f Mins", (restaurant.Distance/10)*60)
+		restaurant.IsFavorite = checkIfFev(restaurant.ID, ctx)
+		restaurantIds = append(restaurantIds, strings.TrimSpace(restaurant.ID))
 		restaurants = append(restaurants, restaurant)
 	}
 
+	foodProducts, err := r.foodProductRepository.GetFoodProductByRestaurant(ctx.Context(), restaurantIds)
+	if err != nil {
+		fmt.Println("Error getting food products:", err)
+		return nil, err
+	}
+	for i, restaurant := range restaurants {
+		var items []models.DisplayFoodProductsWithVariants
+		for _, foodProduct := range foodProducts {
+			if strings.TrimSpace(foodProduct.RestaurantId) == restaurant.ID {
+				items = append(items, foodProduct)
+			}
+		}
+		restaurants[i].Items = items
+	}
+
 	if err := rows.Err(); err != nil {
+		fmt.Println("Error iterating over rows:", err)
 		return nil, err
 	}
 

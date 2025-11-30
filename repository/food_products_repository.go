@@ -114,6 +114,7 @@ func (r *FoodProductRepository) GetFoodProducts(ctx context.Context) ([]models.F
 
 func (r *FoodProductRepository) GetFoodProductWithEntity(ctx *fiber.Ctx, entity string) ([]models.DisplayFoodCatagoryProducts, error) {
 	var foodProductsToReturn []models.DisplayFoodCatagoryProducts
+	r.rp = NewRestaurantRepository(r.db)
 	restIdsSet := make(map[string]struct{}) // Use a set for unique restaurant IDs
 	mapResIdToFoodProd := make(map[string][]models.DisplayFoodCatagoryProducts)
 	mapCatToFoodProdToReturn := make(map[string]models.DisplayFoodCatagoryProducts)

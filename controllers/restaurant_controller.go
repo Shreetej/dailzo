@@ -42,7 +42,7 @@ func (c *RestaurantController) GetRestaurant(ctx *fiber.Ctx) error {
 
 func (c *RestaurantController) GetRestaurantsByName(ctx *fiber.Ctx) error {
 	name := ctx.Params("name")
-	restaurant, err := c.repo.GetRestaurantsByName(ctx.Context(), name)
+	restaurant, err := c.repo.GetRestaurantsByName(ctx, name)
 	if err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Restaurants not found"})
 	}
