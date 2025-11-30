@@ -224,12 +224,12 @@ func (r *FoodProductRepository) DeleteFoodProduct(ctx context.Context, id string
 	return err
 }
 
-func (r *FoodProductRepository) GetFoodProductByRestaurant(ctx context.Context, id string) ([]models.DisplayFoodProductsWithVariants, error) {
+func (r *FoodProductRepository) GetFoodProductByRestaurant(ctx context.Context, ids []string) ([]models.DisplayFoodProductsWithVariants, error) {
 	var foodProductWithVriants []models.DisplayFoodProductsWithVariants
 	mapFoodProductIdsToFoodProduct := make(map[string]models.DisplayFoodProductsWithVariants)
 	var arrFoodProductIds []string
-	query := `SELECT id, name, description, price, category, type, image_url, is_active FROM food_products WHERE restaurant = $1`
-	rows, err := r.db.Query(ctx, query, id)
+	query := `SELECT id, name, description, price, category, type, image_url, is_active, restaurant FROM food_products WHERE restaurant = ANY($1)`
+	rows, err := r.db.Query(ctx, query, ids)
 	if err != nil {
 		return foodProductWithVriants, err
 	}
@@ -245,6 +245,7 @@ func (r *FoodProductRepository) GetFoodProductByRestaurant(ctx context.Context, 
 			&foodProductWithVriant.Type,
 			&foodProductWithVriant.ImageURL,
 			&foodProductWithVriant.IsActive,
+			&foodProductWithVriant.RestaurantId,
 		)
 		arrFoodProductIds = append(arrFoodProductIds, foodProductWithVriant.ID)
 		//foodProductWithVriants = append(foodProductWithVriants, foodProductWithVriant)

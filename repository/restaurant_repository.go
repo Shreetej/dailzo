@@ -540,6 +540,7 @@ func (r *RestaurantRepository) DeleteRestaurant(ctx context.Context, id string) 
 
 func (r *RestaurantRepository) GetTopRatedRestaurants(ctx *fiber.Ctx) ([]models.DisplayRestaurantWithItems, error) {
 	var restaurants []models.DisplayRestaurantWithItems
+	var restaurantIds []string
 	sess, err := globals.Store.Get(ctx)
 	if err != nil {
 		fmt.Println("Error getting session:", err)
@@ -593,13 +594,24 @@ func (r *RestaurantRepository) GetTopRatedRestaurants(ctx *fiber.Ctx) ([]models.
 		}
 		restaurant.DeliveryTimings = fmt.Sprintf("%.2f Mins", (restaurant.Distance/10)*60)
 		restaurant.IsFavorite = checkIfFev(restaurant.ID, ctx)
-		foodProducts, err := r.foodProductRepository.GetFoodProductByRestaurant(ctx.Context(), restaurant.ID)
-		if err != nil {
-			fmt.Println("Error getting food products:", err)
-			return nil, err
-		}
-		restaurant.Items = foodProducts
+		restaurantIds = append(restaurantIds, strings.TrimSpace(restaurant.ID))
 		restaurants = append(restaurants, restaurant)
+	}
+
+	foodProducts, err := r.foodProductRepository.GetFoodProductByRestaurant(ctx.Context(), restaurantIds)
+	if err != nil {
+		fmt.Println("Error getting food products:", err)
+		return nil, err
+	}
+	fmt.Println("foodProducts", foodProducts[0].RestaurantId)
+	for i, restaurant := range restaurants {
+		var items []models.DisplayFoodProductsWithVariants
+		for _, foodProduct := range foodProducts {
+			if strings.TrimSpace(foodProduct.RestaurantId) == restaurant.ID {
+				items = append(items, foodProduct)
+			}
+		}
+		restaurants[i].Items = items
 	}
 
 	if err := rows.Err(); err != nil {
