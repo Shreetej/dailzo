@@ -220,3 +220,203 @@ func (r *FoodProductRepository) DeleteFoodProduct(ctx context.Context, id string
 	_, err := r.db.Exec(ctx, query, id)
 	return err
 }
+
+// GetProductsWithFilters retrieves products with various filters
+func (r *FoodProductRepository) GetProductsWithFilters(ctx context.Context, category, stock *string, promo *bool, expiry, role *string) ([]models.FoodProduct, error) {
+	query := `SELECT id, name, description, price, category, image_url, is_active,
+		stock_quantity, low_stock_threshold, expiry_date, is_promo, auto_discount_pct,
+		outlet_id, created_on, last_updated_on
+		FROM food_products WHERE 1=1`
+
+	args := []interface{}{}
+	argCount := 0
+
+	// Category filter
+	if category != nil && *category != "" {
+		argCount++
+		query += fmt.Sprintf(" AND category ILIKE $%d", argCount)
+		args = append(args, "%"+*category+"%")
+	}
+
+	// Stock filter
+	if stock != nil && *stock != "" {
+		switch *stock {
+		case "low":
+			query += " AND stock_quantity <= low_stock_threshold"
+		case "out":
+			query += " AND stock_quantity = 0"
+		case "available":
+			query += " AND stock_quantity > 0"
+		}
+	}
+
+	// Promo filter
+	if promo != nil && *promo {
+		query += " AND is_promo = true"
+	}
+
+	// Expiry filter
+	if expiry != nil && *expiry != "" {
+		switch *expiry {
+		case "soon":
+			query += " AND expiry_date IS NOT NULL AND expiry_date <= CURRENT_DATE + INTERVAL '7 days' AND expiry_date >= CURRENT_DATE"
+		case "expired":
+			query += " AND expiry_date IS NOT NULL AND expiry_date < CURRENT_DATE"
+		}
+	}
+
+	// Role filter (grocery vs restaurant)
+	if role != nil && *role != "" {
+		// This would filter based on the outlet type
+		// For now, we assume outlet_id helps distinguish
+	}
+
+	query += " AND is_active = true ORDER BY name ASC"
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query products: %w", err)
+	}
+	defer rows.Close()
+
+	var products []models.FoodProduct
+	for rows.Next() {
+		var p models.FoodProduct
+		err := rows.Scan(
+			&p.ID, &p.Name, &p.Description, &p.Price, &p.Category,
+			&p.ImageURL, &p.IsActive, &p.StockQuantity, &p.LowStockThreshold,
+			&p.ExpiryDate, &p.IsPromo, &p.AutoDiscountPct, &p.OutletID,
+			&p.CreatedOn, &p.LastUpdatedOn,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan product: %w", err)
+		}
+		products = append(products, p)
+	}
+
+	return products, nil
+}
+
+// GetExpiryAlerts gets products expiring soon
+func (r *FoodProductRepository) GetExpiryAlerts(ctx context.Context, outletID string) ([]models.FoodProduct, error) {
+	query := `SELECT id, name, description, price, category, stock_quantity, expiry_date, outlet_id
+		FROM food_products
+		WHERE is_active = true
+			AND expiry_date IS NOT NULL
+			AND expiry_date <= CURRENT_DATE + INTERVAL '7 days'
+			AND expiry_date >= CURRENT_DATE`
+
+	args := []interface{}{}
+	if outletID != "" {
+		query += " AND outlet_id = $1"
+		args = append(args, outletID)
+	}
+
+	query += " ORDER BY expiry_date ASC"
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query expiry alerts: %w", err)
+	}
+	defer rows.Close()
+
+	var products []models.FoodProduct
+	for rows.Next() {
+		var p models.FoodProduct
+		err := rows.Scan(
+			&p.ID, &p.Name, &p.Description, &p.Price, &p.Category,
+			&p.StockQuantity, &p.ExpiryDate, &p.OutletID,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan product: %w", err)
+		}
+		products = append(products, p)
+	}
+
+	return products, nil
+}
+
+// GetAutoDiscounts gets products with auto-discount enabled
+func (r *FoodProductRepository) GetAutoDiscounts(ctx context.Context, outletID string) ([]models.FoodProduct, error) {
+	query := `SELECT id, name, description, price, category, stock_quantity,
+		expiry_date, auto_discount_pct, outlet_id
+		FROM food_products
+		WHERE is_active = true
+			AND auto_discount_enabled = true
+			AND expiry_date IS NOT NULL
+			AND expiry_date <= CURRENT_DATE + INTERVAL '3 days'`
+
+	args := []interface{}{}
+	if outletID != "" {
+		query += " AND outlet_id = $1"
+		args = append(args, outletID)
+	}
+
+	query += " ORDER BY expiry_date ASC"
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query auto discounts: %w", err)
+	}
+	defer rows.Close()
+
+	var products []models.FoodProduct
+	for rows.Next() {
+		var p models.FoodProduct
+		err := rows.Scan(
+			&p.ID, &p.Name, &p.Description, &p.Price, &p.Category,
+			&p.StockQuantity, &p.ExpiryDate, &p.AutoDiscountPct, &p.OutletID,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan product: %w", err)
+		}
+		products = append(products, p)
+	}
+
+	return products, nil
+}
+
+// PatchProduct updates specific fields of a product
+func (r *FoodProductRepository) PatchProduct(ctx context.Context, id string, updates map[string]interface{}) error {
+	if len(updates) == 0 {
+		return nil
+	}
+
+	// Build dynamic update query
+	query := "UPDATE food_products SET "
+	args := []interface{}{}
+	argCount := 0
+
+	for key, value := range updates {
+		if argCount > 0 {
+			query += ", "
+		}
+		argCount++
+		query += fmt.Sprintf("%s = $%d", key, argCount)
+		args = append(args, value)
+	}
+
+	// Always update last_updated_on
+	argCount++
+	query += fmt.Sprintf(", last_updated_on = $%d", argCount)
+	args = append(args, time.Now())
+
+	argCount++
+	query += fmt.Sprintf(", last_modified_by = $%d", argCount)
+	args = append(args, globals.GetLoogedInUserId())
+
+	argCount++
+	query += fmt.Sprintf(" WHERE id = $%d", argCount)
+	args = append(args, id)
+
+	result, err := r.db.Exec(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("failed to update product: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("product not found")
+	}
+
+	return nil
+}

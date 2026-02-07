@@ -4,6 +4,11 @@ import (
 	"dailzo/config"
 	"dailzo/controllers"
 	"dailzo/db"
+	"dailzo/internal/api"
+	"dailzo/internal/server"
+	ws "dailzo/internal/websocket"
+	"dailzo/middleware"
+	"dailzo/pkg/response"
 	"dailzo/repository"
 	"dailzo/routes"
 	"fmt"
@@ -12,6 +17,9 @@ import (
 	"syscall"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/websocket/v2"
 )
 
 func main() {
@@ -25,20 +33,7 @@ func main() {
 
 	fmt.Print("User details:")
 
-	// // Initialize repositories and controllers
-	// userRepo := repository.NewUserRepository(db.DB)
-	// userController := controllers.NewUserController(userRepo)
-
-	// addressRepo := repository.NewAddressRepository(db.DB)
-	// addressController := controllers.NewAddressController(addressRepo)
-
-	// foodProductRepo := repository.NewFoodProductRepository(db.DB)
-	// foodProductController := controllers.NewFoodProductController(foodProductRepo)
-
-	// productVariantRepo := repository.NewProductVariantRepository(db.DB)
-	// productVariantController := controllers.NewProductVariantController(productVariantRepo)
-
-	// Repositories
+	// ─── Repositories ───────────────────────────────────────────────────
 	userRepo := repository.NewUserRepository(db.DB)
 	otpRepo := repository.NewOTPRepository(db.DB)
 	addressRepo := repository.NewAddressRepository(db.DB)
@@ -51,18 +46,18 @@ func main() {
 	ratingRepo := repository.NewRatingRepository(db.DB)
 	refundRepo := repository.NewRefundRepository(db.DB)
 	restaurantRepo := repository.NewRestaurantRepository(db.DB)
-
 	consentRepo := repository.NewConsentRepository(db.DB)
-	consentController := controllers.NewConsentController(consentRepo)
-	emailController := controllers.NewEmailControllerWithConsent(consentController)
-
-	// Initialize OfferRepository
 	offerRepo := repository.NewOfferRepository(db.DB)
 
-	// Initialize OfferController
-	offerController := controllers.NewOfferController(offerRepo)
+	// New repositories for v1 API
+	deliveryRepo := repository.NewDeliveryRepository(db.DB)
+	groceryRepo := repository.NewGroceryRepository(db.DB)
+	adminRepo := repository.NewAdminRepository(db.DB)
 
-	// Controllers
+	// ─── Legacy Controllers ─────────────────────────────────────────────
+	consentController := controllers.NewConsentController(consentRepo)
+	emailController := controllers.NewEmailControllerWithConsent(consentController)
+	offerController := controllers.NewOfferController(offerRepo)
 	userController := controllers.NewUserController(userRepo, otpRepo)
 	addressController := controllers.NewAddressController(addressRepo)
 	foodProductController := controllers.NewFoodProductController(foodProductRepo)
@@ -75,12 +70,40 @@ func main() {
 	refundController := controllers.NewRefundController(refundRepo)
 	restaurantController := controllers.NewRestaurantController(restaurantRepo)
 
-	//emailController := controllers.NewEmailController()
+	// ─── v1 API Server (implements OpenAPI ServerInterface) ─────────────
+	apiServer := server.NewServer(
+		userRepo, orderRepo, foodProductRepo,
+		deliveryRepo, groceryRepo, adminRepo, otpRepo,
+	)
 
-	// Initialize Fiber app
-	app := fiber.New()
+	// ─── WebSocket Hub ──────────────────────────────────────────────────
+	hub := ws.NewHub()
+	go hub.Run()
 
-	// Setup routes
+	// ─── Fiber App ──────────────────────────────────────────────────────
+	app := fiber.New(fiber.Config{
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			code := fiber.StatusInternalServerError
+			if e, ok := err.(*fiber.Error); ok {
+				code = e.Code
+			}
+			return response.Error(c, code, "ERROR", err.Error())
+		},
+	})
+
+	// Global middleware
+	app.Use(recover.New())
+	app.Use(cors.New())
+
+	// ─── Health Check ───────────────────────────────────────────────────
+	app.Get("/health", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"status":  "ok",
+			"service": "dailzo-backend",
+		})
+	})
+
+	// ─── Legacy Routes (/api) ───────────────────────────────────────────
 	routes.SetupRoutes(
 		app,
 		userController,
@@ -98,7 +121,26 @@ func main() {
 		offerController,
 	)
 
-	// Graceful shutdown handling
+	// ─── v1 API Routes (/api/v1) ────────────────────────────────────────
+	v1 := app.Group("/api/v1")
+
+	// Register OpenAPI-generated routes with JWT middleware
+	api.RegisterHandlersWithOptions(v1, apiServer, api.FiberServerOptions{
+		Middlewares: []api.MiddlewareFunc{
+			api.MiddlewareFunc(middleware.JWTMiddleware()),
+		},
+	})
+
+	// ─── WebSocket Route ────────────────────────────────────────────────
+	app.Use("/ws", func(c *fiber.Ctx) error {
+		if websocket.IsWebSocketUpgrade(c) {
+			return c.Next()
+		}
+		return fiber.ErrUpgradeRequired
+	})
+	app.Get("/ws/delivery/track/:orderId", websocket.New(ws.TrackDeliveryHandler(hub)))
+
+	// ─── Graceful Shutdown ──────────────────────────────────────────────
 	go func() {
 		quit := make(chan os.Signal, 1)
 		signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
@@ -106,12 +148,12 @@ func main() {
 		log.Info().Msg("Shutting down DB connections")
 		db.CloseDatabase()
 		app.Shutdown()
-		log.Info().Msg("DB shutdown sucessful")
+		log.Info().Msg("DB shutdown successful")
 	}()
 
-	// Start the server
+	// ─── Start Server ───────────────────────────────────────────────────
+	log.Info().Str("port", cfg.AppPort).Msg("Starting Dailzo backend")
 	if err := app.Listen(":" + cfg.AppPort); err != nil {
 		panic(err)
 	}
-	log.Info().Str("App started at port :", cfg.DBPort)
 }

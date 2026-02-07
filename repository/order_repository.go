@@ -208,3 +208,105 @@ func (r *OrderRepository) DeleteOrder(ctx context.Context, id string) error {
 
 	return nil
 }
+
+// GetOrdersWithFilters retrieves orders with optional status and outlet filters
+func (r *OrderRepository) GetOrdersWithFilters(ctx context.Context, status *string, outletID *string) ([]models.Order, error) {
+	query := `SELECT id, user_id, restaurant_id, status, total_amount, order_date,
+		delivery_person_id, created_on, last_updated_on, created_by, last_modified_by
+		FROM orders WHERE 1=1`
+
+	args := []interface{}{}
+	argCount := 0
+
+	if status != nil && *status != "" {
+		argCount++
+		query += fmt.Sprintf(" AND status = $%d", argCount)
+		args = append(args, *status)
+	}
+
+	if outletID != nil && *outletID != "" {
+		argCount++
+		query += fmt.Sprintf(" AND (restaurant_id = $%d OR outlet_id = $%d)", argCount, argCount)
+		args = append(args, *outletID)
+	}
+
+	query += " ORDER BY order_date DESC"
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query orders: %w", err)
+	}
+	defer rows.Close()
+
+	var orders []models.Order
+	for rows.Next() {
+		var order models.Order
+		if err := rows.Scan(
+			&order.ID,
+			&order.UserID,
+			&order.RestaurantID,
+			&order.Status,
+			&order.TotalAmount,
+			&order.OrderDate,
+			&order.DeliveryPersonID,
+			&order.CreatedOn,
+			&order.LastUpdatedOn,
+			&order.CreatedBy,
+			&order.LastModifiedBy,
+		); err != nil {
+			return nil, fmt.Errorf("failed to scan order: %w", err)
+		}
+		orders = append(orders, order)
+	}
+
+	return orders, nil
+}
+
+// UpdateOrderStatus updates only the status of an order
+func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, orderID string, status string) error {
+	query := `UPDATE orders
+		SET status = $1, last_updated_on = $2, last_modified_by = $3
+		WHERE id = $4`
+
+	result, err := r.db.Exec(ctx, query,
+		status,
+		time.Now(),
+		globals.GetLoogedInUserId(),
+		orderID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to update order status: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return errors.New("order not found")
+	}
+
+	return nil
+}
+
+// AssignDeliveryPerson assigns a delivery person to an order
+func (r *OrderRepository) AssignDeliveryPerson(ctx context.Context, orderID string, deliveryPersonID string) error {
+	query := `UPDATE orders
+		SET delivery_person_id = $1, delivery_status = 'assigned',
+			last_updated_on = $2, last_modified_by = $3
+		WHERE id = $4`
+
+	result, err := r.db.Exec(ctx, query,
+		deliveryPersonID,
+		time.Now(),
+		globals.GetLoogedInUserId(),
+		orderID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to assign delivery person: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return errors.New("order not found")
+	}
+
+	return nil
+}

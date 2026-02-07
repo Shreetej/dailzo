@@ -25,18 +25,17 @@ type Restaurant struct {
 
 // Restaurant represents a restaurant record in the database
 type DisplayRestaurant struct {
-	ID          string    `json:"id"`           // Unique ID for the restaurant
-	Name        string    `json:"name"`         // Name of the restaurant
-	Address     string    `json:"address"`      // Address of the restaurant
-	PhoneNumber string    `json:"phone_number"` // Phone number of the restaurant
-	Email       string    `json:"email"`        // Email address of the restaurant
-	OpeningTime time.Time `json:"opening_time"` // Opening time of the restaurant
-	ClosingTime time.Time `json:"closing_time"` // Closing time of the restaurant
-	// below values to check dynamically
-	Distance        float64 `json:"distance"`         // Distance from the user's location
-	Rating          float64 `json:"rating"`           // Rating of the restaurant
-	DeliveryTimings string  `json:"delivery_timings"` // Delivery timings of the restaurant
-	IsFavorite      bool    `json:"is_favorite"`      // Whether the restaurant is a favorite of the user
+	ID              string    `json:"id"`               // Unique ID for the restaurant
+	Name            string    `json:"name"`             // Name of the restaurant
+	Address         string    `json:"address"`          // Address of the restaurant
+	PhoneNumber     string    `json:"phone_number"`     // Phone number of the restaurant
+	Email           string    `json:"email"`            // Email address of the restaurant
+	OpeningTime     time.Time `json:"opening_time"`     // Opening time of the restaurant
+	ClosingTime     time.Time `json:"closing_time"`     // Closing time of the restaurant
+	Distance        float64   `json:"distance"`         // Distance from the user's location
+	Rating          float64   `json:"rating"`           // Rating of the restaurant
+	DeliveryTimings string    `json:"delivery_timings"` // Delivery timings of the restaurant
+	IsFavorite      bool      `json:"is_favorite"`      // Whether the restaurant is a favorite of the user
 	//Offer           DisplayOffer `json:"offers"`           // Offer available at the restaurant
 }
 

@@ -1,0 +1,691 @@
+openapi: 3.0.3
+info:
+  title: Dailzo Vendor APIs
+  version: 1.0.0
+  description: Backend APIs for vendor, grocery, delivery partner, and admin modules.
+servers:
+  - url: https://api.yourdomain.com/v1
+tags:
+  - name: Auth
+  - name: Grocery
+  - name: Delivery
+  - name: Orders
+  - name: Products
+  - name: Admin
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+        error:
+          type: object
+      required: [success]
+    AuthUser:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string }
+        first_name: { type: string }
+        user_type: { type: string }
+        mobile_no: { type: string }
+        address: { type: string }
+        registration_completed: { type: boolean }
+    GroceryProfile:
+      type: object
+      properties:
+        id: { type: string }
+        store_name: { type: string }
+        owner_name: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        address: { type: string }
+        city: { type: string }
+        kyc_status: { type: string }
+        payout_status: { type: string }
+        working_hours: { type: string }
+    GroceryKpi:
+      type: object
+      properties:
+        today_revenue: { type: number }
+        pending_orders: { type: integer }
+        cancel_rate: { type: number }
+        avg_prep_time: { type: string }
+        low_stock_items: { type: integer }
+        expiry_risk_items: { type: integer }
+    GroceryExpiryAlert:
+      type: object
+      properties:
+        product_id: { type: string }
+        name: { type: string }
+        days_left: { type: integer }
+        expiry_date: { type: string }
+        stock_quantity: { type: integer }
+    GroceryStockAlert:
+      type: object
+      properties:
+        product_id: { type: string }
+        name: { type: string }
+        stock_quantity: { type: integer }
+        threshold: { type: integer }
+    GroceryPayoutSummary:
+      type: object
+      properties:
+        next_payout_date: { type: string }
+        amount: { type: number }
+        status: { type: string }
+    DeliveryProfile:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        phone: { type: string }
+        city: { type: string }
+        rating: { type: string }
+        kyc_status: { type: string }
+    DeliveryKpi:
+      type: object
+      properties:
+        today_earnings: { type: number }
+        completed_trips: { type: integer }
+        online_hours: { type: string }
+        acceptance_rate_pct: { type: number }
+        online_minutes: { type: integer }
+    DeliveryTask:
+      type: object
+      properties:
+        order_id: { type: string }
+        status: { type: string }
+        eta_mins: { type: integer }
+        pickup_point: { type: string }
+        drop_point: { type: string }
+    DeliveryTraceEvent:
+      type: object
+      properties:
+        order_id: { type: string }
+        status: { type: string }
+        timestamp: { type: string }
+        actor_type: { type: string }
+        lat: { type: number }
+        lng: { type: number }
+        notes: { type: string }
+    DeliverySlaKpi:
+      type: object
+      properties:
+        avg_pickup_delay: { type: number }
+        avg_delivery_delay: { type: number }
+        on_time_pct: { type: number }
+        breach_count: { type: integer }
+        idle_time_mins: { type: integer }
+    DeliveryEarningsInsight:
+      type: object
+      properties:
+        best_zones:
+          type: array
+          items: { type: string }
+        best_shifts:
+          type: array
+          items: { type: string }
+        avg_hourly: { type: number }
+        expected_uplift_pct: { type: number }
+    DeliveryRecommendation:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        message: { type: string }
+        type: { type: string }
+        priority: { type: string }
+        cta_route: { type: string }
+    AdminOnboardingLead:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        type: { type: string }
+        city: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        last_step: { type: string }
+        last_active_at: { type: string }
+        days_since_start: { type: integer }
+        potential_loss: { type: number }
+    AdminComplaintInvestigation:
+      type: object
+      properties:
+        complaint_id: { type: string }
+        order_id: { type: string }
+        culprit: { type: string }
+        reason_code: { type: string }
+        confidence: { type: number }
+        evidence_timeline:
+          type: array
+          items: { type: string }
+    Order:
+      type: object
+      properties:
+        id: { type: string }
+        restaurant_id: { type: string }
+        outlet_id: { type: string }
+        customer_id: { type: string }
+        customer_name: { type: string }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              quantity: { type: integer }
+              price: { type: number }
+        subtotal: { type: number }
+        delivery_fee: { type: number }
+        tax: { type: number }
+        total_amount: { type: number }
+        status: { type: string }
+        order_date: { type: string, format: date-time }
+        delivery_address:
+          type: object
+          properties:
+            street: { type: string }
+            city: { type: string }
+            state: { type: string }
+            zip_code: { type: string }
+            latitude: { type: number }
+            longitude: { type: number }
+        assigned_delivery_person: { type: string, nullable: true }
+        delivery_partner_status: { type: string, nullable: true }
+        pickup_otp: { type: string, nullable: true }
+        delivery_otp: { type: string, nullable: true }
+    Product:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        price: { type: number }
+        basePrice: { type: number }
+        packagingCharge: { type: number }
+        vatPercentage: { type: number }
+        category: { type: string }
+        imageUrl: { type: string }
+        available: { type: boolean }
+        stockQuantity: { type: integer }
+        tags:
+          type: array
+          items: { type: string }
+        discountPercentage: { type: integer }
+        expiryDate: { type: string, format: date-time }
+        mrp: { type: number }
+        batchNo: { type: string }
+        storageType: { type: string }
+        isVeg: { type: boolean }
+        spiceLevel: { type: string }
+        prepTimeMinutes: { type: integer }
+        portionSize: { type: string }
+        brand: { type: string }
+        unit: { type: string }
+        weight: { type: number }
+        shelfLifeDays: { type: integer }
+security:
+  - bearerAuth: []
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        "200":
+          description: OK
+  /auth/signup:
+    post:
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                password: { type: string }
+                user_type: { type: string }
+      responses:
+        "200":
+          description: OK
+  /auth/send-otp:
+    post:
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_type: { type: string }
+                type: { type: string }
+                email: { type: string }
+                mobile: { type: string }
+      responses:
+        "200":
+          description: OK
+  /auth/verify-otp:
+    post:
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id: { type: string }
+                otp: { type: string }
+      responses:
+        "200":
+          description: OK
+  /auth/me:
+    get:
+      tags: [Auth]
+      responses:
+        "200":
+          description: OK
+  /auth/profile:
+    patch:
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: OK
+  /grocery/onboarding:
+    post:
+      tags: [Grocery]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: OK
+  /grocery/profile:
+    get:
+      tags: [Grocery]
+      responses:
+        "200":
+          description: OK
+  /grocery/kpis:
+    get:
+      tags: [Grocery]
+      responses:
+        "200":
+          description: OK
+  /grocery/expiry-alerts:
+    get:
+      tags: [Grocery]
+      responses:
+        "200":
+          description: OK
+  /grocery/stock-alerts:
+    get:
+      tags: [Grocery]
+      responses:
+        "200":
+          description: OK
+  /grocery/payout-summary:
+    get:
+      tags: [Grocery]
+      responses:
+        "200":
+          description: OK
+  /delivery/onboarding:
+    post:
+      tags: [Delivery]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: OK
+  /delivery/profile:
+    get:
+      tags: [Delivery]
+      responses:
+        "200":
+          description: OK
+  /delivery/kpis:
+    get:
+      tags: [Delivery]
+      responses:
+        "200":
+          description: OK
+  /delivery/active-task:
+    get:
+      tags: [Delivery]
+      responses:
+        "200":
+          description: OK
+  /delivery/trace/{orderId}:
+    get:
+      tags: [Delivery]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+  /delivery/sla-kpis:
+    get:
+      tags: [Delivery]
+      responses:
+        "200":
+          description: OK
+  /delivery/earnings-insights:
+    get:
+      tags: [Delivery]
+      responses:
+        "200":
+          description: OK
+  /delivery/recommendations:
+    get:
+      tags: [Delivery]
+      responses:
+        "200":
+          description: OK
+  /delivery/recommendations/ack:
+    post:
+      tags: [Delivery]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id: { type: string }
+      responses:
+        "200":
+          description: OK
+  /delivery/earnings/weekly:
+    get:
+      tags: [Delivery]
+      responses:
+        "200":
+          description: OK
+  /delivery/shifts:
+    get:
+      tags: [Delivery]
+      responses:
+        "200":
+          description: OK
+  /orders:
+    get:
+      tags: [Orders]
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: outlet_id
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+  /orders/{order_id}/status:
+    patch:
+      tags: [Orders]
+      parameters:
+        - in: path
+          name: order_id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: OK
+  /orders/{order_id}/assign-delivery:
+    post:
+      tags: [Orders]
+      parameters:
+        - in: path
+          name: order_id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                delivery_person_id: { type: string }
+      responses:
+        "200":
+          description: OK
+  /products:
+    get:
+      tags: [Products]
+      parameters:
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: stock
+          schema: { type: string }
+        - in: query
+          name: promo
+          schema: { type: boolean }
+        - in: query
+          name: expiry
+          schema:
+            type: string
+            enum: [soon, expired, all]
+        - in: query
+          name: role
+          schema:
+            type: string
+            enum: [grocery, restaurant]
+      responses:
+        "200":
+          description: OK
+  /products/expiry-alerts:
+    get:
+      tags: [Products]
+      responses:
+        "200":
+          description: OK
+  /products/auto-discounts:
+    get:
+      tags: [Products]
+      responses:
+        "200":
+          description: OK
+  /products/{id}:
+    patch:
+      tags: [Products]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: OK
+  /admin/approvals:
+    get:
+      tags: [Admin]
+      responses:
+        "200":
+          description: OK
+  /admin/approvals/{id}/approve:
+    post:
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes: { type: string }
+      responses:
+        "200":
+          description: OK
+  /admin/approvals/{id}/reject:
+    post:
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes: { type: string }
+      responses:
+        "200":
+          description: OK
+  /admin/partners:
+    get:
+      tags: [Admin]
+      responses:
+        "200":
+          description: OK
+  /admin/partners/{id}/suspend:
+    post:
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        "200":
+          description: OK
+  /admin/complaints:
+    get:
+      tags: [Admin]
+      responses:
+        "200":
+          description: OK
+  /admin/complaints/{id}/resolve:
+    post:
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resolution_notes: { type: string }
+                refund_amount: { type: number }
+      responses:
+        "200":
+          description: OK
+  /admin/complaints/{id}/investigation:
+    get:
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+  /admin/reports/kpis:
+    get:
+      tags: [Admin]
+      responses:
+        "200":
+          description: OK
+  /admin/onboarding-leads:
+    get:
+      tags: [Admin]
+      responses:
+        "200":
+          description: OK
+  /admin/onboarding-leads/{id}/notify:
+    post:
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                channel: { type: string }
+                message: { type: string }
+      responses:
+        "200":
+          description: OK
