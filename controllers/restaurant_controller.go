@@ -42,7 +42,7 @@ func (c *RestaurantController) GetRestaurant(ctx *fiber.Ctx) error {
 
 func (c *RestaurantController) GetRestaurantsByName(ctx *fiber.Ctx) error {
 	name := ctx.Params("name")
-	restaurant, err := c.repo.GetRestaurantsByName(ctx.Context(), name)
+	restaurant, err := c.repo.GetRestaurantsByName(ctx, name)
 	if err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Restaurants not found"})
 	}
@@ -87,4 +87,12 @@ func (c *RestaurantController) DeleteRestaurant(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Restaurant deleted successfully"})
+}
+
+func (c *RestaurantController) GetTopRatedRestaurants(ctx *fiber.Ctx) error {
+	restaurants, err := c.repo.GetTopRatedRestaurants(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch top-rated restaurants"})
+	}
+	return ctx.JSON(restaurants)
 }

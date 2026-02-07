@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "539f8124-4263-41f9-8181-a5e7ee3df185",
+		"_postman_id": "11b75ede-86cd-4d77-88e1-464c6af87061",
 		"name": "Dailzo",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
 		"_exporter_id": "15326291"
@@ -23,7 +23,7 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/users"
+						"url": "{{url}}/api/users"
 					},
 					"response": []
 				},
@@ -94,7 +94,47 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/users"
+						"url": "{{url}}/api/users"
+					},
+					"response": []
+				},
+				{
+					"name": "UpdateFevFood",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n   \"first_name\":\"Nitin\",\r\n    \"last_name\":\"Ghuge\",\r\n    \"middle_name\":\"Pandhari\",\r\n    \"email\":\"nghuge4@gmail.com\",\r\n    \"mobileno\":\"7887778577\",\r\n    \"password\":\"Nitin\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/addFevResto?restaurant=jhgj",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"addFevResto"
+							],
+							"query": [
+								{
+									"key": "restaurant",
+									"value": "jhgj"
+								}
+							]
+						}
 					},
 					"response": []
 				},
@@ -121,7 +161,7 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/users"
+						"url": "{{url}}/api/users"
 					},
 					"response": []
 				},
@@ -173,14 +213,14 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"email\":\"nghuge4@gmail.com\",\r\n    \"password\":\"Nitin\"\r\n}",
+							"raw": "{\r\n    \"email\":\"nghuge4@gmail.com\",\r\n    \"password\":\"test\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
 								}
 							}
 						},
-						"url": "localhost:3000/api/login"
+						"url": "{{url}}/api/login"
 					},
 					"response": []
 				}
@@ -209,7 +249,7 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/address"
+						"url": "{{url}}/api/address"
 					},
 					"response": []
 				},
@@ -236,7 +276,7 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/address"
+						"url": "{{url}}/api/address"
 					},
 					"response": []
 				},
@@ -255,13 +295,8 @@
 							}
 						],
 						"body": {
-							"mode": "raw",
-							"raw": "",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							"mode": "formdata",
+							"formdata": []
 						},
 						"url": {
 							"raw": "localhost:3000/api/address/:id=",
@@ -277,7 +312,7 @@
 							"variable": [
 								{
 									"key": "id=",
-									"value": "ADDRS1733409437"
+									"value": "ADDRS1733160190"
 								}
 							]
 						}
@@ -338,7 +373,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"id\": \"ADDRS1733409437\",\r\n    \"name\": \"Second Address 2\",\r\n    \"address_line_1\": \"Patrna\",\r\n    \"address_line_2\": \"Apt 4B\",\r\n    \"address_line_3\": \"Address 3\",\r\n    \"zip_pin\": \"123456\",\r\n    \"benchmark\": \"Near school\",\r\n    \"user_id\": \"USR1733148693\",\r\n    \"city\": \"Springfield\",\r\n    \"state\": \"Illinois\",\r\n    \"type\": \"Home\",\r\n    \"mobileno\": \"9876543210\",\r\n    \"longitude\": -89.65,\r\n    \"latitude\": 49.8,\r\n    \"created_on\": \"\",\r\n    \"last_updated_on\": \"\",\r\n    \"created_by\": null,\r\n    \"last_modified_by\": null\r\n}",
+							"raw": "{\r\n    \"id\": \"ADDRS1733160190\",\r\n    \"name\": \"Second Address 2\",\r\n    \"address_line_1\": \"Patrna\",\r\n    \"address_line_2\": \"Apt 4B\",\r\n    \"address_line_3\": \"Address 3\",\r\n    \"zip_pin\": \"123456\",\r\n    \"benchmark\": \"Near school\",\r\n    \"user_id\": \"USR1733148693\",\r\n    \"city\": \"Springfield\",\r\n    \"state\": \"Illinois\",\r\n    \"type\": \"Home\",\r\n    \"mobileno\": \"9876543210\",\r\n    \"longitude\": 73.0,\r\n    \"latitude\": 19.05,\r\n    \"created_on\": \"\",\r\n    \"last_updated_on\": \"\",\r\n    \"created_by\": null,\r\n    \"last_modified_by\": null\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -346,11 +381,10 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:3000/api/address/:id=",
+							"raw": "{{url}}/api/address/:id=",
 							"host": [
-								"localhost"
+								"{{url}}"
 							],
-							"port": "3000",
 							"path": [
 								"api",
 								"address",
@@ -391,7 +425,7 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/payment"
+						"url": "{{url}}/api/payment"
 					},
 					"response": []
 				},
@@ -418,7 +452,7 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/payments"
+						"url": "{{url}}/api/payments"
 					},
 					"response": []
 				},
@@ -573,7 +607,7 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/paymethod"
+						"url": "{{url}}/api/paymethod"
 					},
 					"response": []
 				},
@@ -600,7 +634,7 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/paymethods"
+						"url": "{{url}}/api/paymethods"
 					},
 					"response": []
 				},
@@ -755,7 +789,7 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/order"
+						"url": "{{url}}/api/order"
 					},
 					"response": []
 				},
@@ -782,7 +816,7 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/orders"
+						"url": "{{url}}/api/orders"
 					},
 					"response": []
 				},
@@ -930,14 +964,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"rating\": 3,\r\n  \"comment\": \"Excellent service, highly recommend!\",\r\n  \"user_id\": \"USR1733148693\",\r\n  \"entity_type\": \"restaurant\",\r\n  \"entity_id\": \"REST1733253623\"\r\n}",
+							"raw": "{\r\n  \"rating\": 5,\r\n  \"comment\": \"Excellent service, highly recommend!\",\r\n  \"user_id\": \"USR1733148693\",\r\n  \"entity_type\": \"restaurant\",\r\n  \"entity_id\": \"REST1733253623\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
 								}
 							}
 						},
-						"url": "localhost:3000/api/rating"
+						"url": "{{url}}/api/rating"
 					},
 					"response": []
 				},
@@ -964,7 +998,7 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/ratings"
+						"url": "{{url}}/api/ratings"
 					},
 					"response": []
 				},
@@ -992,11 +1026,10 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:3000/api/rating/:id=",
+							"raw": "{{url}}/api/rating/:id=",
 							"host": [
-								"localhost"
+								"{{url}}"
 							],
-							"port": "3000",
 							"path": [
 								"api",
 								"rating",
@@ -1006,6 +1039,49 @@
 								{
 									"key": "id=",
 									"value": "RTNG1733423179"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Top Rating",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/api/ratings/:toprated=",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"ratings",
+								":toprated="
+							],
+							"variable": [
+								{
+									"key": "toprated=",
+									"value": "restaurant"
 								}
 							]
 						}
@@ -1066,7 +1142,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n \"id\": \"RTNG1733423190\",\r\n  \"rating\": 3,\r\n  \"comment\": \"Good service, highly recommend!\",\r\n  \"user_id\": \"USR1733148693\",\r\n  \"entity_type\": \"restaurant\",\r\n  \"entity_id\": \"REST1733253623\"\r\n}",
+							"raw": "{\r\n \"id\": \"RTNG1733423190\",\r\n  \"rating\": 5,\r\n  \"comment\": \"Good service, highly recommend!\",\r\n  \"user_id\": \"USR1733148693\",\r\n  \"entity_type\": \"restaurant\",\r\n  \"entity_id\": \"REST1733253623\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1119,7 +1195,7 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/refund"
+						"url": "{{url}}/api/refund"
 					},
 					"response": []
 				},
@@ -1146,7 +1222,7 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/refunds"
+						"url": "{{url}}/api/refunds"
 					},
 					"response": []
 				},
@@ -1301,7 +1377,7 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/orderitem"
+						"url": "{{url}}/api/orderitem"
 					},
 					"response": []
 				},
@@ -1328,7 +1404,7 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/orderitems"
+						"url": "{{url}}/api/orderitems"
 					},
 					"response": []
 				},
@@ -1461,6 +1537,195 @@
 			]
 		},
 		{
+			"name": "Offer",
+			"item": [
+				{
+					"name": "Create Offer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"Summer Sale 30\",\r\n    \"description\": \"Get up to 30% off on selected items during our Summer Sale!\",\r\n    \"discount_percent\": 30,\r\n    \"max_discount_amount\": 100,\r\n    \"start_date\": \"2023-06-01T00:00:00Z\",\r\n    \"end_date\": \"2028-06-30T23:59:59Z\",\r\n    \"is_active\": true\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{url}}/api/offer"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Offer Condition",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"offer_id\": \"OFFER1738165364\",\r\n  \"condition_type\": \"payment method\",\r\n  \"value\": \"credit card\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{url}}/api/conditions"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Offer",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\":\"OFFER1738165364\",\r\n    \"name\": \"Summer Sale 50\",\r\n    \"description\": \"Get up to 50% off on selected items during our Summer Sale!\",\r\n    \"discount_percent\": 50,\r\n    \"max_discount_amount\": 100,\r\n    \"start_date\": \"2023-06-01T00:00:00Z\",\r\n    \"end_date\": \"2023-06-30T23:59:59Z\",\r\n    \"is_active\": true\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{url}}/api/offer"
+					},
+					"response": []
+				},
+				{
+					"name": "get Offer",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"order_id\": \"ORDR1733419459\",\r\n  \"product_variant_id\": \"PRODV1733168034\",\r\n  \"quantity\": 2,\r\n  \"price\": 29.99\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{url}}/api/offers"
+					},
+					"response": []
+				},
+				{
+					"name": "get Offer Copy",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"order_id\": \"ORDR1733419459\",\r\n  \"product_variant_id\": \"PRODV1733168034\",\r\n  \"quantity\": 2,\r\n  \"price\": 29.99\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/conditions/:offer_id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"conditions",
+								":offer_id="
+							],
+							"variable": [
+								{
+									"key": "offer_id=",
+									"value": "OFFER1738165364"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DeleteOffer",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"order_id\": \"ORDR1733419459\",\r\n  \"product_variant_id\": \"PRODV1733168034\",\r\n  \"quantity\": 2,\r\n  \"price\": 29.99\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/offer/:id=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"offer",
+								":id="
+							],
+							"variable": [
+								{
+									"key": "id=",
+									"value": "OFFER1738165165"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "FoodProduct",
 			"item": [
 				{
@@ -1476,14 +1741,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"name\": \"Mutton Pizza\",\r\n  \"description\": \"A delicious vegetarian pizza with fresh ingredients.\",\r\n  \"category\": \"Pizza\",\r\n  \"type\": \"Non-Veg\",\r\n  \"price\": 12.99,\r\n  \"image_url\": \"https://example.com/images/veg_pizza.jpg\",\r\n  \"is_active\": true\r\n}\r\n",
+							"raw": "{\r\n  \"name\": \"Mutton Pizza\",\r\n  \"description\": \"A delicious vegetarian pizza with fresh ingredients.\",\r\n  \"category\": \"Pizza\",\r\n  \"type\": \"Non-Veg\",\r\n  \"price\": 12.99,\r\n  \"image_url\": \"https://example.com/images/veg_pizza.jpg\",\r\n  \"is_active\": true,\r\n  \"restaurant\" : \"REST1733321934\"\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
 								}
 							}
 						},
-						"url": "localhost:3000/api/foodproduct"
+						"url": "{{url}}/api/foodproduct"
 					},
 					"response": []
 				},
@@ -1510,7 +1775,7 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/foodproducts"
+						"url": "{{url}}/api/foodproducts"
 					},
 					"response": []
 				},
@@ -1709,7 +1974,7 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/productvariant"
+						"url": "{{url}}/api/productvariant"
 					},
 					"response": []
 				},
@@ -1777,7 +2042,7 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/productvariants"
+						"url": "{{url}}/api/productvariants"
 					},
 					"response": []
 				},
@@ -1884,14 +2149,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"name\": \"aNNA IDLI\",\r\n  \"address\": \"ADDRS1733160190\",\r\n  \"phone_number\": \"1234567890\",\r\n  \"email\": \"test@example.com\",\r\n  \"opening_time\": \"2023-12-01T08:00:00Z\",\r\n  \"closing_time\": \"2023-12-01T22:00:00Z\"\r\n}\r\n",
+							"raw": "{\r\n  \"name\": \"Dada Dosa\",\r\n  \"address\": \"ADDRS1733160190\",\r\n  \"phone_number\": \"1234567890\",\r\n  \"email\": \"test@example.com\",\r\n  \"opening_time\": \"2023-12-01T08:00:00Z\",\r\n  \"closing_time\": \"2023-12-01T22:00:00Z\"\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
 								}
 							}
 						},
-						"url": "localhost:3000/api/restaurant"
+						"url": "{{url}}/api/restaurant"
 					},
 					"response": []
 				},
@@ -2044,7 +2309,78 @@
 								}
 							}
 						},
-						"url": "localhost:3000/api/restaurants"
+						"url": "{{url}}/api/restaurants"
+					},
+					"response": []
+				},
+				{
+					"name": "Get ALL top Restaurants",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Sahara Pizza\",\r\n  \"address\": \"ADDRS1733160190\",\r\n  \"phone_number\": \"1234567890\",\r\n  \"email\": \"test@example.com\",\r\n  \"opening_time\": \"2023-12-01T08:00:00Z\",\r\n  \"closing_time\": \"2023-12-01T22:00:00Z\",\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{url}}/api/topratedrestaurants"
+					},
+					"response": []
+				},
+				{
+					"name": "Get ALL Restaurants With Entity",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Sahara Pizza\",\r\n  \"address\": \"ADDRS1733160190\",\r\n  \"phone_number\": \"1234567890\",\r\n  \"email\": \"test@example.com\",\r\n  \"opening_time\": \"2023-12-01T08:00:00Z\",\r\n  \"closing_time\": \"2023-12-01T22:00:00Z\",\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/restaurants/:entity=",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"restaurants",
+								":entity="
+							],
+							"variable": [
+								{
+									"key": "entity=",
+									"value": "pizza"
+								}
+							]
+						}
 					},
 					"response": []
 				}
@@ -2066,14 +2402,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"to\": \"nghuge4@gmail.com\",\r\n  \"subject\": \"Verify Dailzo\",\r\n  \"message\" : \"OTP : 443344\"\r\n}\r\n",
+							"raw": "{\r\n  \"to\": \"nghuge4@gmail.com\",\r\n  \"subject\": \"Verify Dailzo\",\r\n  \"message\" : \"OTP : 123123\"\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
 								}
 							}
 						},
-						"url": "localhost:3000/api/send-verify-email"
+						"url": "{{url}}/api/send-verify-email"
 					},
 					"response": []
 				},
@@ -2093,7 +2429,7 @@
 							"formdata": [
 								{
 									"key": "otp",
-									"value": "017487",
+									"value": "18947",
 									"type": "text"
 								}
 							]
@@ -2128,6 +2464,7 @@
 			"script": {
 				"type": "text/javascript",
 				"packages": {},
+				"requests": {},
 				"exec": [
 					""
 				]
@@ -2138,6 +2475,7 @@
 			"script": {
 				"type": "text/javascript",
 				"packages": {},
+				"requests": {},
 				"exec": [
 					""
 				]
@@ -2147,8 +2485,11 @@
 	"variable": [
 		{
 			"key": "token",
-			"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzM0MDc5OTcsImlhdCI6MTczMzMyMTU5Nywic3ViIjoiVVNSMTczMzE0ODY5MyJ9.LFGEirSqASFFgHuVzBhmzGa2JM6pWq3oFyDer4ASycY",
-			"type": "string"
+			"value": ""
+		},
+		{
+			"key": "url",
+			"value": ""
 		}
 	]
 }

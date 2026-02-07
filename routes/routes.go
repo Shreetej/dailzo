@@ -7,27 +7,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// func SetupRoutes(app *fiber.App, userController *controllers.UserController, addressController *controllers.AddressController, foodProductController *controllers.FoodProductController, productVariantController *controllers.ProductVariantController) {
-// 	api := app.Group("/api")
-
-// 	// Public routes
-// 	api.Post("/users", userController.CreateUser)
-// 	api.Post("/login", userController.Login)
-
-// 	// Protected routes (JWT required)
-// 	api.Get("/users/:id", middleware.JWTMiddleware(), userController.GetUserById)
-// 	api.Put("/users", middleware.JWTMiddleware(), userController.UpdateUser)
-// 	api.Delete("/users/:id", middleware.JWTMiddleware(), userController.DeleteUser)
-// 	api.Get("/users", middleware.JWTMiddleware(), userController.GetUsers)
-// 	api.Post("/address", middleware.JWTMiddleware(), addressController.CreateAddress)
-
-// 	api.Post("/foodproduct", middleware.JWTMiddleware(), foodProductController.CreateFoodProduct)
-// 	fmt.Print("User details:")
-
-// 	api.Post("/productvariant", middleware.JWTMiddleware(), productVariantController.CreateProductVariant)
-
-// }
-
 func SetupRoutes(
 	app *fiber.App,
 	userController *controllers.UserController,
@@ -47,7 +26,7 @@ func SetupRoutes(
 	api := app.Group("/api")
 
 	// Public routes
-	api.Post("/users", userController.CreateUser)
+	api.Post("/signup", userController.CreateUser)
 	api.Post("/login", userController.Login)
 	api.Post("/send-otp", userController.SendOTP)
 	api.Post("/verify-otp-login", userController.VerifyOTPLogin)
@@ -91,7 +70,8 @@ func SetupRoutes(
 	api.Delete("/restaurant/:id", middleware.JWTMiddleware(), restaurantController.DeleteRestaurant)
 	api.Get("/restaurants", middleware.JWTMiddleware(), restaurantController.GetRestaurants)
 	api.Get("/restaurants/:name", middleware.JWTMiddleware(), restaurantController.GetRestaurantsByName)
-	// api.Get("/restaurants/city/:city", middleware.JWTMiddleware(), restaurantController.GetRestaurantsByCity)
+	api.Get("/topratedrestaurants", middleware.JWTMiddleware(), restaurantController.GetTopRatedRestaurants)
+	// api.Get("/restaurants/city/:city", middleware.JWTMiddleware(), restaurantController.GetTopRatedRestaurantsByCity)
 	// api.Get("/restaurants/cuisine/:cuisine", middleware.JWTMiddleware(), restaurantController.GetRestaurantsByCuisine)
 
 	// Order routes

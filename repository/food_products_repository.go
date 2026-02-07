@@ -13,20 +13,21 @@ import (
 )
 
 type FoodProductRepository struct {
-	db *pgxpool.Pool
-	rp *RestaurantRepository
+	db                       *pgxpool.Pool
+	rp                       *RestaurantRepository
+	productVariantRepository *ProductVariantRepository
 }
 
 func NewFoodProductRepository(db *pgxpool.Pool) *FoodProductRepository {
-	return &FoodProductRepository{db: db, rp: NewRestaurantRepository(db)}
+	return &FoodProductRepository{db: db, productVariantRepository: NewProductVariantRepository(db)}
 }
 
 func (r *FoodProductRepository) CreateFoodProduct(ctx context.Context, foodProduct models.FoodProduct) (string, error) {
 
 	id := GetIdToRecord("FPROD")
 	query := `INSERT INTO food_products 
-    (id, name, description, category, type, price, image_url, is_active, created_on, last_updated_on, created_by, last_modified_by) 
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+    (id, name, description, category, type, price, image_url, is_active, created_on, last_updated_on, created_by, last_modified_by, restaurant) 
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
     RETURNING id`
 
 	// Assuming 'db' is your database connection and 'ctx' is the context
@@ -43,8 +44,10 @@ func (r *FoodProductRepository) CreateFoodProduct(ctx context.Context, foodProdu
 		time.Now(),
 		globals.GetLoogedInUserId(),
 		globals.GetLoogedInUserId(),
+		foodProduct.RestaurantId,
 	).Scan(&foodProduct.ID)
 	println("User in query :", globals.GetLoogedInUserId())
+	println("Restaurant in query :", foodProduct.RestaurantId)
 	if err != nil {
 		println("Error in query :", err.Error())
 		return " ", err
@@ -111,6 +114,7 @@ func (r *FoodProductRepository) GetFoodProducts(ctx context.Context) ([]models.F
 
 func (r *FoodProductRepository) GetFoodProductWithEntity(ctx *fiber.Ctx, entity string) ([]models.DisplayFoodCatagoryProducts, error) {
 	var foodProductsToReturn []models.DisplayFoodCatagoryProducts
+	r.rp = NewRestaurantRepository(r.db)
 	restIdsSet := make(map[string]struct{}) // Use a set for unique restaurant IDs
 	mapResIdToFoodProd := make(map[string][]models.DisplayFoodCatagoryProducts)
 	mapCatToFoodProdToReturn := make(map[string]models.DisplayFoodCatagoryProducts)
