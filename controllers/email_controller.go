@@ -106,7 +106,6 @@ func (e *EmailController) SendVerifyEmailOtp(c *fiber.Ctx) error {
 
 // VerifyOTPHandler handles the OTP verification process
 func (e *EmailController) VerifyOTPHandler(c *fiber.Ctx) error {
-	fmt.Printf("Received order: %+v\n", c.Params)
 	// Get the entity (email or phone) and the OTP from the request
 	entityToVerify := c.Params("entityToVerify")
 	otpEntered := c.FormValue("otp")

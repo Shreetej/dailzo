@@ -26,7 +26,7 @@ func (c *RefundController) CreateRefund(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not create refund"})
 	}
 	log := config.SetupLogger()
-	log.Info().Msgf("Refund created with ID: %d", id)
+	log.Info().Msgf("Refund created with ID: %s", id)
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"id": id})
 }
 

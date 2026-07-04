@@ -26,7 +26,7 @@ func (c *PaymentController) CreatePayment(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not create payment"})
 	}
 	log := config.SetupLogger()
-	log.Info().Msgf("Payment created with ID: %d", id)
+	log.Info().Msgf("Payment created with ID: %s", id)
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"id": id})
 }
 

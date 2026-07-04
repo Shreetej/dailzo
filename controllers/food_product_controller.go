@@ -27,7 +27,7 @@ func (c *FoodProductController) CreateFoodProduct(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not create food product"})
 	}
 	log := config.SetupLogger()
-	log.Info().Msgf("Food product created with ID: %d", id)
+	log.Info().Msgf("Food product created with ID: %s", id)
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"id": id})
 }
 

@@ -28,7 +28,7 @@ func (c *ProductVariantController) CreateProductVariant(ctx *fiber.Ctx) error {
 
 	// Log user creation
 	log := config.SetupLogger()
-	log.Info().Msgf("variant created with ID: %d", id)
+	log.Info().Msgf("variant created with ID: %s", id)
 
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"id": id})
 }

@@ -28,7 +28,7 @@ func (c *OrderController) CreateOrder(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not create order"})
 	}
 	log := config.SetupLogger()
-	log.Info().Msgf("Order created with ID: %d", id)
+	log.Info().Msgf("Order created with ID: %s", id)
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"id": id})
 }
 
