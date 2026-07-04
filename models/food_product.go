@@ -7,6 +7,7 @@ import (
 // FoodProduct represents the food_product table in the database
 type FoodProduct struct {
 	ID             string    `json:"id" db:"id"`                             // Unique identifier for the food product
+	RestaurantId   string    `json:"restaurant_id" db:"restaurant"`          // Restaurant the product belongs to
 	Name           string    `json:"name" db:"name"`                         // Name of the food product
 	Description    string    `json:"description" db:"description"`           // Description of the product
 	Category       string    `json:"category" db:"category"`                 // Category like Pizza, Grocery, etc.

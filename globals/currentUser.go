@@ -35,7 +35,7 @@ var (
 
 var (
 	CurrentLoggedInUser = LoggedInUser{
-		UserID:   "12345",
+		UserID:   "",
 		UserName: "john_doe",
 		Role:     "admin",
 	}

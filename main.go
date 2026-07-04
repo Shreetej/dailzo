@@ -69,6 +69,10 @@ func main() {
 	ratingController := controllers.NewRatingController(ratingRepo)
 	refundController := controllers.NewRefundController(refundRepo)
 	restaurantController := controllers.NewRestaurantController(restaurantRepo)
+	marketingRepo := repository.NewMarketingRepository(db.DB)
+	marketingController := controllers.NewMarketingController(marketingRepo)
+	registrationRepo := repository.NewRegistrationRepository(db.DB)
+	registrationController := controllers.NewRegistrationController(registrationRepo)
 
 	// ─── v1 API Server (implements OpenAPI ServerInterface) ─────────────
 	apiServer := server.NewServer(
@@ -119,15 +123,53 @@ func main() {
 		restaurantController,
 		emailController,
 		offerController,
+		marketingController,
 	)
 
 	// ─── v1 API Routes (/api/v1) ────────────────────────────────────────
 	v1 := app.Group("/api/v1")
 
+	// Auth endpoints must be reachable without a token; everything else on
+	// v1 goes through JWT.
+	publicV1Paths := map[string]bool{
+		"/api/v1/auth/login":         true,
+		"/api/v1/auth/signup":        true,
+		"/api/v1/auth/send-otp":      true,
+		"/api/v1/auth/verify-otp":    true,
+		"/api/v1/is-user-registered": true,
+	}
+	jwtHandler := middleware.JWTMiddleware()
+	v1Auth := func(c *fiber.Ctx) error {
+		if publicV1Paths[c.Path()] {
+			return c.Next()
+		}
+		return jwtHandler(c)
+	}
+
+	// Marketing & vendor-ops routes on v1 (same handlers as the legacy /api
+	// copies registered in routes.SetupRoutes). Registered before the
+	// generated handlers so they are not shadowed.
+	v1.Get("/marketing/discounts", marketingController.GetDiscounts)
+	v1.Post("/marketing/discounts", marketingController.CreateDiscount)
+	v1.Get("/marketing/ads", marketingController.GetAdCampaigns)
+	v1.Post("/marketing/ads", marketingController.CreateAdCampaign)
+	v1.Post("/marketing/ads/:id/stop", marketingController.StopAdCampaign)
+	v1.Get("/marketing/ads/packs", marketingController.GetAdPacks)
+	v1.Post("/orders/:order_id/out-of-stock", marketingController.MarkOrderItemsOutOfStock)
+	v1.Get("/orders/:order_id/out-of-stock", marketingController.GetOrderOutOfStockItems)
+	v1.Post("/restaurant/:restaurant_id/outlets", marketingController.CreateVendorOutlet)
+
+	// Restaurant registration flow used by the Partner app.
+	v1.Post("/restaurant/register", registrationController.RegisterRestaurant)
+	v1.Put("/restaurant/:restaurant_id/payment", registrationController.UpdatePaymentInfo)
+	v1.Put("/restaurant/:restaurant_id/complete", registrationController.CompleteRegistration)
+	v1.Get("/restaurant/:restaurant_id/outlets", registrationController.GetVendorOutlets)
+	v1.Get("/restaurant/:restaurant_id", registrationController.GetRestaurantData)
+
 	// Register OpenAPI-generated routes with JWT middleware
 	api.RegisterHandlersWithOptions(v1, apiServer, api.FiberServerOptions{
 		Middlewares: []api.MiddlewareFunc{
-			api.MiddlewareFunc(middleware.JWTMiddleware()),
+			api.MiddlewareFunc(v1Auth),
 		},
 	})
 

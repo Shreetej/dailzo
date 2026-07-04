@@ -22,6 +22,7 @@ func SetupRoutes(
 	restaurantController *controllers.RestaurantController,
 	emailController *controllers.EmailController,
 	offerController *controllers.OfferController,
+	marketingController *controllers.MarketingController,
 ) {
 	api := app.Group("/api")
 
@@ -140,4 +141,17 @@ func SetupRoutes(
 	// Applicable entity routes
 	api.Post("/applicable-entities", offerController.CreateApplicableEntity)
 	api.Get("/applicable-entities/:offer_id", offerController.GetEntitiesByOfferID)
+
+	// Marketing routes (Partner app: discounts & ad campaigns)
+	api.Get("/marketing/discounts", marketingController.GetDiscounts)
+	api.Post("/marketing/discounts", marketingController.CreateDiscount)
+	api.Get("/marketing/ads", marketingController.GetAdCampaigns)
+	api.Post("/marketing/ads", marketingController.CreateAdCampaign)
+	api.Post("/marketing/ads/:id/stop", marketingController.StopAdCampaign)
+	api.Get("/marketing/ads/packs", marketingController.GetAdPacks)
+
+	// Vendor ops routes (Partner app)
+	api.Post("/orders/:order_id/out-of-stock", marketingController.MarkOrderItemsOutOfStock)
+	api.Get("/orders/:order_id/out-of-stock", marketingController.GetOrderOutOfStockItems)
+	api.Post("/restaurant/:restaurant_id/outlets", marketingController.CreateVendorOutlet)
 }

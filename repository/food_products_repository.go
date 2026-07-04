@@ -112,6 +112,38 @@ func (r *FoodProductRepository) GetFoodProducts(ctx context.Context) ([]models.F
 	return foodProducts, nil
 }
 
+// GetFoodProductByRestaurant returns active products (with empty variant
+// lists) for the given restaurant ids.
+func (r *FoodProductRepository) GetFoodProductByRestaurant(ctx context.Context, restaurantIds []string) ([]models.DisplayFoodProductsWithVariants, error) {
+	products := []models.DisplayFoodProductsWithVariants{}
+	if len(restaurantIds) == 0 {
+		return products, nil
+	}
+
+	query := `SELECT id, name, description, category, type, price, image_url,
+	                 is_active, restaurant
+	          FROM food_products
+	          WHERE is_active = true AND TRIM(restaurant) = ANY($1)`
+
+	rows, err := r.db.Query(ctx, query, restaurantIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var p models.DisplayFoodProductsWithVariants
+		if err := rows.Scan(
+			&p.ID, &p.Name, &p.Description, &p.Category, &p.Type, &p.Price,
+			&p.ImageURL, &p.IsActive, &p.RestaurantId,
+		); err != nil {
+			return nil, err
+		}
+		products = append(products, p)
+	}
+	return products, rows.Err()
+}
+
 func (r *FoodProductRepository) GetFoodProductWithEntity(ctx *fiber.Ctx, entity string) ([]models.DisplayFoodCatagoryProducts, error) {
 	var foodProductsToReturn []models.DisplayFoodCatagoryProducts
 	r.rp = NewRestaurantRepository(r.db)

@@ -211,7 +211,8 @@ func (r *OrderRepository) DeleteOrder(ctx context.Context, id string) error {
 
 // GetOrdersWithFilters retrieves orders with optional status and outlet filters
 func (r *OrderRepository) GetOrdersWithFilters(ctx context.Context, status *string, outletID *string) ([]models.Order, error) {
-	query := `SELECT id, user_id, restaurant_id, status, total_amount, order_date,
+	query := `SELECT id, user_id, restaurant_id, outlet_id, status, delivery_status,
+		total_amount, order_date,
 		delivery_person_id, created_on, last_updated_on, created_by, last_modified_by
 		FROM orders WHERE 1=1`
 
@@ -226,6 +227,7 @@ func (r *OrderRepository) GetOrdersWithFilters(ctx context.Context, status *stri
 
 	if outletID != nil && *outletID != "" {
 		argCount++
+		// Single shared placeholder: match either the restaurant or outlet id.
 		query += fmt.Sprintf(" AND (restaurant_id = $%d OR outlet_id = $%d)", argCount, argCount)
 		args = append(args, *outletID)
 	}
@@ -245,7 +247,9 @@ func (r *OrderRepository) GetOrdersWithFilters(ctx context.Context, status *stri
 			&order.ID,
 			&order.UserID,
 			&order.RestaurantID,
+			&order.OutletID,
 			&order.Status,
+			&order.DeliveryStatus,
 			&order.TotalAmount,
 			&order.OrderDate,
 			&order.DeliveryPersonID,
