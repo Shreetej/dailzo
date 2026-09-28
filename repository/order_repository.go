@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"dailzo/globals"
 	"dailzo/models"
 	"errors"
 	"fmt"
@@ -14,6 +13,16 @@ import (
 
 type OrderRepository struct {
 	db *pgxpool.Pool
+}
+
+// nullIfEmpty returns nil for empty strings so optional foreign-key columns
+// (restaurant_id, outlet_id, delivery_person_id) are inserted as NULL instead
+// of "" — an empty string is not NULL and violates the FK constraint.
+func nullIfEmpty(s string) interface{} {
+	if s == "" {
+		return nil
+	}
+	return s
 }
 
 func NewOrderRepository(db *pgxpool.Pool) *OrderRepository {
@@ -33,31 +42,27 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order models.Order) (
 	err := r.db.QueryRow(ctx, query,
 		id,
 		order.UserID,
-		order.RestaurantID,
+		nullIfEmpty(order.RestaurantID),
 		order.Status,
 		order.TotalAmount,
 		time.Now(),
-		order.DeliveryPersonID,
+		nullIfEmpty(order.DeliveryPersonID),
 		time.Now(),
 		time.Now(),
-		globals.GetLoogedInUserId(), // Assuming a function for getting logged-in user ID
-		globals.GetLoogedInUserId(),
+		nullIfEmpty(LoggedInUserID(ctx)),
+		nullIfEmpty(LoggedInUserID(ctx)),
 	).Scan(&order.ID)
-	println("order.Status, :", order.Status)
 
 	if err != nil {
-		println("Error in query:", err)
-		println("Error in query:", err.Error())
 		return "", err
 	}
-	println("Error in query:", id)
 
 	return id, nil
 }
 
 // GetOrderByID retrieves an order by its ID
 func (r *OrderRepository) GetOrderByID(ctx context.Context, id string) (*models.Order, error) {
-	query := `SELECT id, user_id, restaurant_id, status, total_amount, order_date, delivery_person_id, created_on, last_updated_on, created_by, last_modified_by
+	query := `SELECT id, user_id, COALESCE(restaurant_id, ''), status, total_amount, order_date, COALESCE(delivery_person_id, ''), created_on, last_updated_on, COALESCE(created_by, ''), COALESCE(last_modified_by, '')
 		FROM orders
 		WHERE id = $1`
 
@@ -86,7 +91,7 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, id string) (*models.
 
 // GetOrderByID retrieves an order by its ID
 func (r *OrderRepository) GetOrders(ctx context.Context) ([]models.Order, error) {
-	query := `SELECT id, user_id, restaurant_id, status, total_amount, order_date, delivery_person_id, created_on, last_updated_on, created_by, last_modified_by
+	query := `SELECT id, user_id, COALESCE(restaurant_id, ''), status, total_amount, order_date, COALESCE(delivery_person_id, ''), created_on, last_updated_on, COALESCE(created_by, ''), COALESCE(last_modified_by, '')
 		FROM orders`
 
 	rows, err := r.db.Query(ctx, query)
@@ -138,7 +143,7 @@ func (r *OrderRepository) GetOrders(ctx context.Context) ([]models.Order, error)
 // 		order.TotalAmount,
 // 		order.DeliveryPersonID,
 // 		time.Now(),
-// 		globals.GetLoogedInUserId(),
+// 		LoggedInUserID(ctx),
 // 		order.ID,
 // 	)
 // 	println("Error in query:", err.Error())
@@ -173,7 +178,7 @@ func (r *OrderRepository) UpdateOrder(ctx context.Context, order models.Order) e
 		order.TotalAmount,
 		order.DeliveryPersonID,
 		time.Now(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
 		order.ID,
 	)
 
@@ -275,7 +280,7 @@ func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, orderID string,
 	result, err := r.db.Exec(ctx, query,
 		status,
 		time.Now(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
 		orderID,
 	)
 
@@ -297,10 +302,11 @@ func (r *OrderRepository) AssignDeliveryPerson(ctx context.Context, orderID stri
 			last_updated_on = $2, last_modified_by = $3
 		WHERE id = $4`
 
+	now := time.Now()
 	result, err := r.db.Exec(ctx, query,
 		deliveryPersonID,
-		time.Now(),
-		globals.GetLoogedInUserId(),
+		now,
+		LoggedInUserID(ctx),
 		orderID,
 	)
 
@@ -310,6 +316,26 @@ func (r *OrderRepository) AssignDeliveryPerson(ctx context.Context, orderID stri
 
 	if result.RowsAffected() == 0 {
 		return errors.New("order not found")
+	}
+
+	// Create a delivery_tasks row (idempotent) so the partner's active-task
+	// query surfaces this order, and log an initial trace event.
+	var restaurantName, deliveryAddress string
+	_ = r.db.QueryRow(ctx,
+		`SELECT COALESCE(restaurant_name,''), COALESCE(delivery_address,'') FROM orders WHERE id=$1`, orderID).
+		Scan(&restaurantName, &deliveryAddress)
+	taskID := GetIdToRecord("DTSK")
+	if _, err := r.db.Exec(ctx, `
+		INSERT INTO delivery_tasks (id, order_id, delivery_person_id, status, eta_mins,
+			pickup_point, drop_point, assigned_at, created_on, last_updated_on)
+		SELECT $1,$2,$3,'assigned',$4,$5,$6,$7,$7,$7
+		WHERE NOT EXISTS (
+			SELECT 1 FROM delivery_tasks WHERE order_id=$2 AND status NOT IN ('delivered','cancelled'))`,
+		taskID, orderID, deliveryPersonID, 25, restaurantName, deliveryAddress, now); err == nil {
+		_, _ = r.db.Exec(ctx, `
+			INSERT INTO delivery_trace_events (id, order_id, delivery_task_id, status, actor_type, notes)
+			VALUES ($1,$2,$3,'assigned','system','Delivery partner assigned')`,
+			GetIdToRecord("DTRC"), orderID, taskID)
 	}
 
 	return nil

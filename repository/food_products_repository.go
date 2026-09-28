@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"dailzo/globals"
 	"dailzo/models"
 	"fmt"
 	"strings"
@@ -22,32 +21,103 @@ func NewFoodProductRepository(db *pgxpool.Pool) *FoodProductRepository {
 	return &FoodProductRepository{db: db, productVariantRepository: NewProductVariantRepository(db)}
 }
 
+// VerifyVendorActive checks that userID owns, and is approved for, the
+// restaurant/grocery outlet a product is being created under. Previously
+// CreateFoodProduct had no ownership or approval check at all — any
+// authenticated user could create a product against any restaurant_id or
+// outlet_id, approved or not. Returns (true, "") when creation is allowed,
+// or (false, reason) with a caller-facing explanation otherwise.
+func (r *FoodProductRepository) VerifyVendorActive(ctx context.Context, userID string, restaurantID string, outletID *string) (bool, string, error) {
+	if outletID != nil && *outletID != "" {
+		var isActive bool
+		var ownerID string
+		err := r.db.QueryRow(ctx,
+			`SELECT is_active, user_id FROM grocery_profiles WHERE id = $1`, *outletID,
+		).Scan(&isActive, &ownerID)
+		if err != nil {
+			return false, "grocery store not found", nil
+		}
+		if ownerID != userID {
+			return false, "you do not own this grocery store", nil
+		}
+		if !isActive {
+			return false, "your grocery registration is still pending admin approval", nil
+		}
+		return true, "", nil
+	}
+
+	if restaurantID != "" {
+		var isActive bool
+		var ownerID string
+		err := r.db.QueryRow(ctx,
+			`SELECT is_active, created_by FROM restaurants WHERE id = $1`, restaurantID,
+		).Scan(&isActive, &ownerID)
+		if err != nil {
+			return false, "restaurant not found", nil
+		}
+		if ownerID != userID {
+			return false, "you do not own this restaurant", nil
+		}
+		if !isActive {
+			return false, "your restaurant registration is still pending admin approval", nil
+		}
+		return true, "", nil
+	}
+
+	return false, "restaurant_id or outlet_id is required", nil
+}
+
+// CreateFoodProduct persists a vendor-created product. outlet_id/category_id
+// /kind/stock_quantity/brand/unit/weight/promo fields were previously
+// silently dropped even though the model, the food_products table, and
+// GetProducts (storefront_repository.go) all already read/write them — a
+// grocery vendor's product never got outlet_id set, which meant the
+// dashboard's stock/expiry alert queries (WHERE outlet_id = $1) always came
+// back empty, and category-filtered browsing never matched the product.
 func (r *FoodProductRepository) CreateFoodProduct(ctx context.Context, foodProduct models.FoodProduct) (string, error) {
 
+	if foodProduct.Kind == "" {
+		// Grocery products always set outlet_id; anything else defaults to food
+		// (matches the column's own DB default, which an explicit empty-string
+		// insert would otherwise override).
+		if foodProduct.OutletID != nil && *foodProduct.OutletID != "" {
+			foodProduct.Kind = "grocery"
+		} else {
+			foodProduct.Kind = "food"
+		}
+	}
+
 	id := GetIdToRecord("FPROD")
-	query := `INSERT INTO food_products 
-    (id, name, description, category, type, price, image_url, is_active, created_on, last_updated_on, created_by, last_modified_by, restaurant) 
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+	query := `INSERT INTO food_products
+    (id, name, description, category, category_id, kind, type, price, image_url, is_active,
+     stock_quantity, is_promo, promo_price, brand, unit, weight, outlet_id, restaurant_id,
+     created_on, last_updated_on, created_by, last_modified_by)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $19, $20, $20)
     RETURNING id`
 
-	// Assuming 'db' is your database connection and 'ctx' is the context
+	now := time.Now()
 	err := r.db.QueryRow(ctx, query,
 		id,
 		foodProduct.Name,
 		foodProduct.Description,
 		foodProduct.Category,
+		foodProduct.CategoryID,
+		foodProduct.Kind,
 		foodProduct.Type,
 		foodProduct.Price,
 		foodProduct.ImageURL,
 		foodProduct.IsActive,
-		time.Now(),
-		time.Now(),
-		globals.GetLoogedInUserId(),
-		globals.GetLoogedInUserId(),
+		foodProduct.StockQuantity,
+		foodProduct.IsPromo,
+		foodProduct.PromoPrice,
+		foodProduct.Brand,
+		foodProduct.Unit,
+		foodProduct.Weight,
+		foodProduct.OutletID,
 		foodProduct.RestaurantId,
+		now,
+		LoggedInUserID(ctx),
 	).Scan(&foodProduct.ID)
-	println("User in query :", globals.GetLoogedInUserId())
-	println("Restaurant in query :", foodProduct.RestaurantId)
 	if err != nil {
 		println("Error in query :", err.Error())
 		return " ", err
@@ -231,7 +301,7 @@ func (r *FoodProductRepository) UpdateFoodProduct(ctx context.Context, foodProdu
 		foodProduct.Price,
 		foodProduct.Category,
 		time.Now(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
 		foodProduct.Type,
 		foodProduct.ImageURL,
 		foodProduct.IsActive,
@@ -257,8 +327,10 @@ func (r *FoodProductRepository) DeleteFoodProduct(ctx context.Context, id string
 	return err
 }
 
-// GetProductsWithFilters retrieves products with various filters
-func (r *FoodProductRepository) GetProductsWithFilters(ctx context.Context, category, stock *string, promo *bool, expiry, role *string) ([]models.FoodProduct, error) {
+// GetProductsWithFilters retrieves products with various filters. When ownerID
+// is non-empty, results are scoped to products created by that user (the
+// authenticated vendor), so a vendor only sees their own catalog.
+func (r *FoodProductRepository) GetProductsWithFilters(ctx context.Context, category, stock *string, promo *bool, expiry, role *string, ownerID string) ([]models.FoodProduct, error) {
 	query := `SELECT id, name, description, price, category, image_url, is_active,
 		stock_quantity, low_stock_threshold, expiry_date, is_promo, auto_discount_pct,
 		outlet_id, created_on, last_updated_on
@@ -305,6 +377,13 @@ func (r *FoodProductRepository) GetProductsWithFilters(ctx context.Context, cate
 	if role != nil && *role != "" {
 		// This would filter based on the outlet type
 		// For now, we assume outlet_id helps distinguish
+	}
+
+	// Owner filter — scope to the authenticated vendor's own products.
+	if ownerID != "" {
+		argCount++
+		query += fmt.Sprintf(" AND created_by = $%d", argCount)
+		args = append(args, ownerID)
 	}
 
 	query += " AND is_active = true ORDER BY name ASC"
@@ -439,7 +518,7 @@ func (r *FoodProductRepository) PatchProduct(ctx context.Context, id string, upd
 
 	argCount++
 	query += fmt.Sprintf(", last_modified_by = $%d", argCount)
-	args = append(args, globals.GetLoogedInUserId())
+	args = append(args, LoggedInUserID(ctx))
 
 	argCount++
 	query += fmt.Sprintf(" WHERE id = $%d", argCount)

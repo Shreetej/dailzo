@@ -21,6 +21,8 @@ type DeliveryProfile struct {
 	CurrentLng         *float64   `json:"current_lng,omitempty"`
 	LastLocationUpdate *time.Time `json:"last_location_update,omitempty"`
 	WorkingHours       string     `json:"working_hours,omitempty"`
+	VendorID           *string    `json:"vendor_id,omitempty"` // the fleet/agency this rider registered under, if any
+	IsActive           bool       `json:"is_active"`           // approved by their fleet (or platform) — distinct from IsOnline (currently on shift)
 	CreatedOn          time.Time  `json:"created_on"`
 	LastUpdatedOn      time.Time  `json:"last_updated_on"`
 	CreatedBy          *string    `json:"created_by,omitempty"`
@@ -36,6 +38,28 @@ type DeliveryProfileCreate struct {
 	VehicleType   string `json:"vehicle_type"`
 	VehicleNumber string `json:"vehicle_number"`
 	LicenseNumber string `json:"license_number"`
+}
+
+// DeliveryVendorProfile represents a delivery fleet/agency — a company that
+// onboards its own individual riders (DeliveryProfile.VendorID) under a
+// shared invite code, once the platform has approved the fleet itself.
+type DeliveryVendorProfile struct {
+	ID            string    `json:"id"`
+	UserID        string    `json:"user_id"`
+	CompanyName   string    `json:"company_name"`
+	OwnerName     string    `json:"owner_name,omitempty"`
+	Email         string    `json:"email,omitempty"`
+	Phone         string    `json:"phone"`
+	Address       string    `json:"address,omitempty"`
+	City          string    `json:"city,omitempty"`
+	Pincode       string    `json:"pincode,omitempty"`
+	GSTNumber     string    `json:"gst_number,omitempty"`
+	InviteCode    string    `json:"invite_code"`
+	KYCStatus     string    `json:"kyc_status"`
+	IsActive      bool      `json:"is_active"`
+	Rating        float64   `json:"rating"`
+	CreatedOn     time.Time `json:"created_on"`
+	LastUpdatedOn time.Time `json:"last_updated_on"`
 }
 
 // DeliveryTask represents an active delivery assignment

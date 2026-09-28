@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"dailzo/globals"
 	"dailzo/models"
 	"fmt"
 	"log"
@@ -37,8 +36,8 @@ func (r *RatingRepository) CreateRating(ctx context.Context, rating models.Ratin
 		rating.EntityID,
 		time.Now(),
 		time.Now(),
-		globals.GetLoogedInUserId(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
+		LoggedInUserID(ctx),
 	).Scan(&rating.ID)
 
 	if err != nil {
@@ -158,7 +157,7 @@ func (r *RatingRepository) UpdateRating(ctx context.Context, rating models.Ratin
 		rating.Rating,
 		rating.Comment,
 		time.Now(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
 		rating.ID,
 	)
 

@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"dailzo/globals"
 	"dailzo/models"
 	"errors"
 	"fmt"
@@ -23,7 +22,6 @@ func NewAddressRepository(db *pgxpool.Pool) *AddressRepository {
 func (r *AddressRepository) CreateAddress(ctx context.Context, address models.Address) (string, error) {
 	// Generate unique ID for the address
 	id := GetIdToRecord("ADDRS")
-	println(globals.GetLoogedInUserId())
 	// Prepare the query
 	query := `INSERT INTO addresses 
 		(id, address_line_1, address_line_2, address_line_3, zip_pin, benchmark, user_id, city, state, type, longitude, latitude, created_on, last_updated_on, created_by, last_modified_by, mobileno, name)
@@ -38,7 +36,7 @@ func (r *AddressRepository) CreateAddress(ctx context.Context, address models.Ad
 		address.AddressLine3,
 		address.ZIPPin,
 		address.Benchmark,
-		globals.GetLoogedInUserId(), // Assuming this returns logged-in user ID
+		LoggedInUserID(ctx), // Assuming this returns logged-in user ID
 		address.City,
 		address.State,
 		address.Type,
@@ -46,8 +44,8 @@ func (r *AddressRepository) CreateAddress(ctx context.Context, address models.Ad
 		address.Latitude,
 		time.Now(),
 		time.Now(),
-		globals.GetLoogedInUserId(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
+		LoggedInUserID(ctx),
 		address.MobileNo,
 		address.Name).Scan(&address.ID)
 
@@ -59,31 +57,34 @@ func (r *AddressRepository) CreateAddress(ctx context.Context, address models.Ad
 	return id, nil
 }
 
+// GetAddresses returns only the caller's own addresses. Previously this had
+// no WHERE clause at all — any authenticated user could list every address
+// (including phone numbers and lat/long) belonging to every other user.
 func (r *AddressRepository) GetAddresses(ctx context.Context) ([]models.DisplayAddress, error) {
-	//var addresses []models.Address
-	query := `SELECT id, address_line_1, address_line_2, address_line_3, longitude, latitude, created_on, last_updated_on, mobileno, name 
-	          FROM addresses`
-	rows, err := r.db.Query(ctx, query)
+	query := `SELECT id, address_line_1, address_line_2, address_line_3, zip_pin, city, state, type,
+	                 longitude, latitude, created_on, last_updated_on, mobileno, name
+	          FROM addresses WHERE user_id = $1`
+	rows, err := r.db.Query(ctx, query, LoggedInUserID(ctx))
 
 	if err == pgx.ErrNoRows {
 		return nil, errors.New("no address found")
 	}
 	defer rows.Close()
 	addresses, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.DisplayAddress])
-	fmt.Println("Addresses : ", addresses)
 	if err != nil {
-		fmt.Println(err.Error())
 		return nil, err
 	}
 	return addresses, nil
 }
 
+// GetAddressByID is scoped to the caller — previously any authenticated user
+// could fetch any other user's address by guessing/enumerating its id.
 func (r *AddressRepository) GetAddressByID(ctx context.Context, id string) (models.Address, error) {
 	var address models.Address
-	query := `SELECT id, address_line_1, address_line_2, address_line_3, zip_pin, benchmark, user_id, city, state, type, longitude, latitude, mobileno, name 
-	          FROM addresses WHERE id = $1`
+	query := `SELECT id, address_line_1, address_line_2, address_line_3, zip_pin, benchmark, user_id, city, state, type, longitude, latitude, mobileno, name
+	          FROM addresses WHERE id = $1 AND user_id = $2`
 
-	err := r.db.QueryRow(ctx, query, id).Scan(
+	err := r.db.QueryRow(ctx, query, id, LoggedInUserID(ctx)).Scan(
 		&address.ID,
 		&address.AddressLine1,
 		&address.AddressLine2,
@@ -101,8 +102,6 @@ func (r *AddressRepository) GetAddressByID(ctx context.Context, id string) (mode
 	)
 
 	if err != nil {
-		fmt.Println("Addresses : ", address)
-		fmt.Println("err : 106", err)
 		return address, err
 	}
 
@@ -140,36 +139,54 @@ func (r *AddressRepository) GetAddressByUserID(ctx context.Context, usrId string
 	return address, nil
 }
 
+// UpdateAddress is scoped to the caller (WHERE id = ... AND user_id = ...) —
+// previously any authenticated user could update any address by id, and the
+// query even let the caller reassign an address's user_id via the request
+// body, i.e. hijack it onto another account. user_id is no longer settable
+// from the update payload at all.
 func (r *AddressRepository) UpdateAddress(ctx context.Context, address models.Address) error {
-	query := `UPDATE addresses 
-		SET address_line_1 = $1, address_line_2 = $2, address_line_3 = $3, zip_pin = $4, benchmark = $5, user_id = $6, city = $7, state = $8, type = $9, longitude = $10, latitude = $11, 
-		last_updated_on = $12, last_modified_by = $13, mobileno = $14, name = $15 
-		WHERE id = $16`
+	query := `UPDATE addresses
+		SET address_line_1 = $1, address_line_2 = $2, address_line_3 = $3, zip_pin = $4, benchmark = $5, city = $6, state = $7, type = $8, longitude = $9, latitude = $10,
+		last_updated_on = $11, last_modified_by = $12, mobileno = $13, name = $14
+		WHERE id = $15 AND user_id = $16`
 
-	_, err := r.db.Exec(ctx, query,
+	tag, err := r.db.Exec(ctx, query,
 		address.AddressLine1,
 		address.AddressLine2,
 		address.AddressLine3,
 		address.ZIPPin,
 		address.Benchmark,
-		address.UserID,
 		address.City,
 		address.State,
 		address.Type,
 		address.Longitude,
 		address.Latitude,
 		time.Now(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
 		address.MobileNo,
 		address.Name,
 		address.ID,
+		LoggedInUserID(ctx),
 	)
-
-	return err
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return errors.New("address not found")
+	}
+	return nil
 }
 
+// DeleteAddress is scoped to the caller — previously any authenticated user
+// could delete any other user's address by id.
 func (r *AddressRepository) DeleteAddress(ctx context.Context, id string) error {
-	query := `DELETE FROM addresses WHERE id = $1`
-	_, err := r.db.Exec(ctx, query, id)
-	return err
+	query := `DELETE FROM addresses WHERE id = $1 AND user_id = $2`
+	tag, err := r.db.Exec(ctx, query, id, LoggedInUserID(ctx))
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return errors.New("address not found")
+	}
+	return nil
 }

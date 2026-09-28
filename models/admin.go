@@ -46,6 +46,7 @@ type Complaint struct {
 	CustomerName     string     `json:"customer_name,omitempty"`
 	CustomerPhone    string     `json:"customer_phone,omitempty"`
 	OrderAmount      float64    `json:"order_amount,omitempty"`
+	DeliveryPersonName string   `json:"delivery_person_name,omitempty"`
 }
 
 // ComplaintResolve represents complaint resolution action
@@ -154,6 +155,33 @@ type AdminKpis struct {
 	OrdersTrend            float64 `json:"orders_trend"`     // percentage change
 	RevenueTrend           float64 `json:"revenue_trend"`    // percentage change
 	ComplaintsTrend        float64 `json:"complaints_trend"` // percentage change
+}
+
+// DailyStat is one day's aggregated order count + revenue, used both for a
+// single partner's performance trend and the platform-wide revenue timeseries.
+type DailyStat struct {
+	Date    string  `json:"date"`
+	Orders  int     `json:"orders"`
+	Revenue float64 `json:"revenue"`
+}
+
+// PartnerPerformance is a partner's real performance summary + daily trend,
+// backing the admin "View Performance" action (previously a no-op button).
+type PartnerPerformance struct {
+	PartnerID      string      `json:"partner_id"`
+	PartnerType    string      `json:"partner_type"`
+	Rating         float64     `json:"rating"`
+	TotalOrders    int         `json:"total_orders"`
+	TotalRevenue   float64     `json:"total_revenue"`
+	CompletionRate float64     `json:"completion_rate"` // 0-100
+	Daily          []DailyStat `json:"daily"`
+}
+
+// PartnerCommission is a partner's admin-settable commission rate.
+type PartnerCommission struct {
+	PartnerID      string  `json:"partner_id"`
+	PartnerType    string  `json:"partner_type"`
+	CommissionRate float64 `json:"commission_rate"`
 }
 
 // AdminActivityLog represents an admin action log entry

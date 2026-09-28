@@ -33,7 +33,10 @@ func (s *Server) GetProducts(c *fiber.Ctx, params api.GetProductsParams) error {
 		role = &r
 	}
 
-	products, err := s.productRepo.GetProductsWithFilters(c.Context(), category, stock, promo, expiry, role)
+	// Scope to the authenticated vendor's own products.
+	ownerID := getUserIDFromContext(c)
+
+	products, err := s.productRepo.GetProductsWithFilters(c.Context(), category, stock, promo, expiry, role, ownerID)
 	if err != nil {
 		return response.InternalError(c, "Failed to fetch products")
 	}

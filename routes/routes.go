@@ -36,12 +36,15 @@ func SetupRoutes(
 	api.Get("/users/:id", middleware.JWTMiddleware(), userController.GetUserById)
 	api.Put("/users", middleware.JWTMiddleware(), userController.UpdateUser)
 	api.Delete("/users/:id", middleware.JWTMiddleware(), userController.DeleteUser)
-	api.Get("/users", middleware.JWTMiddleware(), userController.GetUsers)
+	api.Get("/users", middleware.JWTMiddleware(), middleware.AdminOnly(), userController.GetUsers)
 
+	// favourite_foods holds both dish-level and grocery-product ids — the
+	// column is just a generic "favourite items" list, so addFevFood/
+	// removeFevFood double as the grocery-product favorite endpoints too.
 	api.Put("/addFevResto", middleware.JWTMiddleware(), userController.UpdateFavoriteRestaurant)
-	api.Put("/updateFevResto", middleware.JWTMiddleware(), userController.UpdateFavoriteFoods)
-	api.Put("/removeFevFood", middleware.JWTMiddleware(), userController.RemoveFavoriteFood)
 	api.Put("/removeFevResto", middleware.JWTMiddleware(), userController.RemoveFavoriteRestaurant)
+	api.Put("/addFevFood", middleware.JWTMiddleware(), userController.UpdateFavoriteFoods)
+	api.Put("/removeFevFood", middleware.JWTMiddleware(), userController.RemoveFavoriteFood)
 
 	api.Post("/address", middleware.JWTMiddleware(), addressController.CreateAddress)
 	api.Get("/address", middleware.JWTMiddleware(), addressController.GetAddresses)
@@ -142,16 +145,17 @@ func SetupRoutes(
 	api.Post("/applicable-entities", offerController.CreateApplicableEntity)
 	api.Get("/applicable-entities/:offer_id", offerController.GetEntitiesByOfferID)
 
-	// Marketing routes (Partner app: discounts & ad campaigns)
+	// Marketing routes (Partner app: discounts & ad campaigns). Reads stay
+	// public (customer app shows discounts pre-login); writes require auth.
 	api.Get("/marketing/discounts", marketingController.GetDiscounts)
-	api.Post("/marketing/discounts", marketingController.CreateDiscount)
+	api.Post("/marketing/discounts", middleware.JWTMiddleware(), marketingController.CreateDiscount)
 	api.Get("/marketing/ads", marketingController.GetAdCampaigns)
-	api.Post("/marketing/ads", marketingController.CreateAdCampaign)
-	api.Post("/marketing/ads/:id/stop", marketingController.StopAdCampaign)
+	api.Post("/marketing/ads", middleware.JWTMiddleware(), marketingController.CreateAdCampaign)
+	api.Post("/marketing/ads/:id/stop", middleware.JWTMiddleware(), marketingController.StopAdCampaign)
 	api.Get("/marketing/ads/packs", marketingController.GetAdPacks)
 
 	// Vendor ops routes (Partner app)
-	api.Post("/orders/:order_id/out-of-stock", marketingController.MarkOrderItemsOutOfStock)
-	api.Get("/orders/:order_id/out-of-stock", marketingController.GetOrderOutOfStockItems)
-	api.Post("/restaurant/:restaurant_id/outlets", marketingController.CreateVendorOutlet)
+	api.Post("/orders/:order_id/out-of-stock", middleware.JWTMiddleware(), marketingController.MarkOrderItemsOutOfStock)
+	api.Get("/orders/:order_id/out-of-stock", middleware.JWTMiddleware(), marketingController.GetOrderOutOfStockItems)
+	api.Post("/restaurant/:restaurant_id/outlets", middleware.JWTMiddleware(), marketingController.CreateVendorOutlet)
 }

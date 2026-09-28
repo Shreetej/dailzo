@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"dailzo/globals"
 	"dailzo/models"
 	"time"
 
@@ -28,7 +27,7 @@ func (r *PaymentMethodRepository) CreatePaymentMethod(ctx context.Context, payme
 
 	err := r.db.QueryRow(ctx, query,
 		id,
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
 		paymentMethod.Type,
 		paymentMethod.Provider,
 		paymentMethod.AccountNumber,
@@ -36,8 +35,8 @@ func (r *PaymentMethodRepository) CreatePaymentMethod(ctx context.Context, payme
 		paymentMethod.IsDefault,
 		time.Now(),
 		time.Now(),
-		globals.GetLoogedInUserId(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
+		LoggedInUserID(ctx),
 		paymentMethod.NameOnCard,
 		paymentMethod.CardType,
 		paymentMethod.CvvEncrypted,

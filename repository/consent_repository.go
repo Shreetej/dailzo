@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"dailzo/globals"
 	"dailzo/models"
 	"errors"
 	"fmt"
@@ -39,8 +38,8 @@ func (r *ConsentRepository) CreateConsent(ctx context.Context, consent models.Co
 		time.Now(),
 		consent.OTPExpiredOn,
 		time.Now(),
-		globals.GetLoogedInUserId(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
+		LoggedInUserID(ctx),
 		time.Now(),
 	).Scan(&consent.ID)
 
@@ -133,7 +132,7 @@ func (r *ConsentRepository) UpdateConsent(ctx context.Context, consent models.Co
 		consent.OTPSentOn,
 		consent.OTPExpiredOn,
 		time.Now(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
 		consent.VerifiedOn,
 		consent.ID,
 	)

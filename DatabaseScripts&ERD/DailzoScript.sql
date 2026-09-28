@@ -258,7 +258,7 @@ CREATE TABLE IF NOT EXISTS public.restaurants
     last_modified_by character varying COLLATE pg_catalog."default",
     rating double precision DEFAULT 0,
     total_ratings integer,
-    image_path "char",
+    image_path text,
     CONSTRAINT restaurants_pkey PRIMARY KEY (id)
 );
 

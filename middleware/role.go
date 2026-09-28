@@ -31,7 +31,7 @@ func AdminOnly() fiber.Handler {
 
 // DeliveryOnly restricts access to delivery partners only
 func DeliveryOnly() fiber.Handler {
-	return RoleMiddleware("delivery")
+	return RoleMiddleware("delivery_partner")
 }
 
 // GroceryOnly restricts access to grocery partners only
@@ -41,5 +41,5 @@ func GroceryOnly() fiber.Handler {
 
 // PartnerOnly restricts access to delivery or grocery partners
 func PartnerOnly() fiber.Handler {
-	return RoleMiddleware("delivery", "grocery")
+	return RoleMiddleware("delivery_partner", "grocery")
 }

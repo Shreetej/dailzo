@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"dailzo/globals"
 	"dailzo/models"
 	"time"
 
@@ -36,8 +35,8 @@ func (r *RefundRepository) CreateRefund(ctx context.Context, refund models.Refun
 		time.Now(),
 		time.Now(),
 		time.Now(),
-		globals.GetLoogedInUserId(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
+		LoggedInUserID(ctx),
 	).Scan(&refund.ID)
 
 	if err != nil {

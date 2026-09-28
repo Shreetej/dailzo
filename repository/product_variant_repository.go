@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"dailzo/globals"
 	"dailzo/models"
 	"fmt"
 	"strings"
@@ -39,8 +38,8 @@ func (r *ProductVariantRepository) CreateProductVariant(ctx context.Context, pro
 		productVariant.IsActive,              // Whether the variant is active
 		time.Now(),                           // Timestamp for when the variant was created
 		time.Now(),                           // Timestamp for the last update
-		globals.GetLoogedInUserId(),          // User ID who created the variant
-		globals.GetLoogedInUserId(),          // User ID who last modified the variant
+		LoggedInUserID(ctx),          // User ID who created the variant
+		LoggedInUserID(ctx),          // User ID who last modified the variant
 	).Scan(&id)
 
 	if err != nil {
@@ -124,7 +123,7 @@ func (r *ProductVariantRepository) UpdateProductVariant(ctx context.Context, pro
 		productVariant.Price,
 		productVariant.QuantityAvailable,
 		time.Now(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
 		productVariant.ID,
 	)
 

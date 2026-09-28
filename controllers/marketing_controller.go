@@ -9,11 +9,12 @@ import (
 )
 
 type MarketingController struct {
-	repo *repository.MarketingRepository
+	repo    *repository.MarketingRepository
+	regRepo *repository.RegistrationRepository
 }
 
-func NewMarketingController(repo *repository.MarketingRepository) *MarketingController {
-	return &MarketingController{repo: repo}
+func NewMarketingController(repo *repository.MarketingRepository, regRepo *repository.RegistrationRepository) *MarketingController {
+	return &MarketingController{repo: repo, regRepo: regRepo}
 }
 
 // GET /marketing/discounts
@@ -124,6 +125,14 @@ func (c *MarketingController) CreateVendorOutlet(ctx *fiber.Ctx) error {
 	restaurantID := ctx.Params("restaurant_id")
 	if restaurantID == "" {
 		return response.BadRequest(ctx, "restaurant id is required")
+	}
+	userID, _ := ctx.Locals("user_id").(string)
+	owned, err := c.regRepo.IsRegistrationOwner(ctx.Context(), restaurantID, userID)
+	if err != nil {
+		return response.InternalError(ctx, "could not verify ownership")
+	}
+	if !owned {
+		return response.Forbidden(ctx, "not your restaurant")
 	}
 
 	var outlet models.VendorOutlet

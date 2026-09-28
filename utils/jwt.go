@@ -13,12 +13,17 @@ func init() {
 	jwtSecret = []byte(config.LoadConfig().JWTSecret)
 }
 
-func GenerateJWT(userID string) (string, error) {
+// GenerateJWT signs a token carrying both the user id and their role.
+// user_type is what middleware.JWTMiddleware reads into c.Locals("user_type")
+// for RoleMiddleware/AdminOnly/DeliveryOnly/etc — those checks silently never
+// matched anything until now because no caller populated this claim.
+func GenerateJWT(userID, userType string) (string, error) {
 	now := time.Now()
 	claims := jwt.MapClaims{
-		"sub": userID,
-		"iat": now.Unix(),
-		"exp": now.Add(time.Hour * 24).Unix(),
+		"sub":       userID,
+		"user_type": userType,
+		"iat":       now.Unix(),
+		"exp":       now.Add(time.Hour * 24).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"dailzo/globals"
 	"dailzo/models"
 	"time"
 
@@ -37,8 +36,8 @@ func (r *PaymentRepository) CreatePayment(ctx context.Context, payment models.Pa
 		time.Now(),
 		time.Now(),
 		time.Now(),
-		globals.GetLoogedInUserId(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
+		LoggedInUserID(ctx),
 	).Scan(&payment.ID)
 
 	if err != nil {

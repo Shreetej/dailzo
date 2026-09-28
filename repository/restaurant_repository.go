@@ -43,8 +43,8 @@ func (r *RestaurantRepository) CreateRestaurant(ctx context.Context, restaurant 
 		restaurant.ClosingTime,
 		time.Now(),
 		time.Now(),
-		globals.GetLoogedInUserId(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
+		LoggedInUserID(ctx),
 	).Scan(&restaurant.ID)
 
 	if err != nil {
@@ -82,7 +82,6 @@ func (r *RestaurantRepository) GetRestaurantByID(ctx context.Context, id string)
 
 func (r *RestaurantRepository) GetRestaurantsByIDs(ctx *fiber.Ctx, ids []string) ([]models.DisplayRestaurant, error) {
 	var restaurants []models.DisplayRestaurant
-	//var uLat, uLong = globals.GetSelectedAddLatLong()
 	//fmt.Println("ids ", ids)
 	idsPGArray := fmt.Sprintf("{%s}", strings.Join(ids, ","))
 	fmt.Println("ids ", idsPGArray)
@@ -131,7 +130,6 @@ func (r *RestaurantRepository) GetRestaurantsByIDs(ctx *fiber.Ctx, ids []string)
 
 func (r *RestaurantRepository) GetDisplayRestaurants(ctx *fiber.Ctx, ids []string) ([]models.DisplayRestaurantWithOffers, error) {
 	var restaurants []models.DisplayRestaurantWithOffers
-	//var uLat, uLong = globals.GetSelectedAddLatLong()
 	//fmt.Println("ids ", ids)
 	idsPGArray := fmt.Sprintf("{%s}", strings.Join(ids, ","))
 	fmt.Println("ids ", idsPGArray)
@@ -346,8 +344,7 @@ func (r *RestaurantRepository) GetDisplayRestaurants(ctx *fiber.Ctx, ids []strin
 
 func (r *RestaurantRepository) GetRestaurants(ctx *fiber.Ctx) ([]models.DisplayRestaurant, error) {
 	var restaurants []models.DisplayRestaurant
-	println(globals.GetLoogedInUserId())
-	query := `SELECT r.id, r.name, r.rating, r.address, a.longitude, a.latitude, r.phone_number, r.email, r.opening_time, r.closing_time 
+	query := `SELECT r.id, r.name, r.rating, r.address, a.longitude, a.latitude, r.phone_number, r.email, r.opening_time, r.closing_time
 			  FROM restaurants r JOIN addresses a ON r.address = a.id`
 
 	rows, err := r.db.Query(ctx.Context(), query)
@@ -581,7 +578,7 @@ func (r *RestaurantRepository) UpdateRestaurant(ctx context.Context, restaurant 
 		restaurant.OpeningTime,
 		restaurant.ClosingTime,
 		time.Now(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
 		restaurant.ID,
 	)
 

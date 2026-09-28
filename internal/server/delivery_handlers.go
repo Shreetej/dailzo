@@ -2,6 +2,7 @@ package server
 
 import (
 	"dailzo/internal/api"
+	ws "dailzo/internal/websocket"
 	"dailzo/models"
 	"dailzo/pkg/response"
 	"time"
@@ -89,6 +90,106 @@ func (s *Server) GetDeliveryKpis(c *fiber.Ctx) error {
 	}
 
 	return response.Success(c, kpis)
+}
+
+// GetDeliveryAvailable handles GET /delivery/available — the real job queue:
+// ready orders with no partner assigned yet. Replaces the vendor app's
+// earlier side door of reusing the unscoped /vendor/orders list.
+func (s *Server) GetDeliveryAvailable(c *fiber.Ctx) error {
+	tasks, err := s.deliveryRepo.GetAvailableOrders(c.Context())
+	if err != nil {
+		return response.InternalError(c, "Failed to fetch available orders")
+	}
+	if tasks == nil {
+		tasks = []models.DeliveryTask{}
+	}
+	return response.Success(c, tasks)
+}
+
+// PostDeliveryAvailableClaim handles POST /delivery/available/:orderId/claim.
+// The caller must have completed delivery onboarding (have a DeliveryProfile);
+// the claim itself is an atomic conditional update, so two partners racing
+// for the same order can't both win it. Registered manually in main.go (not
+// through the OpenAPI codegen), so this takes the plain fiber.Handler shape
+// and reads the path param itself rather than via a generated wrapper.
+func (s *Server) PostDeliveryAvailableClaim(c *fiber.Ctx) error {
+	orderId := c.Params("orderId")
+	userID := getUserIDFromContext(c)
+	if userID == "" {
+		return response.Unauthorized(c, "")
+	}
+
+	// Confirms onboarding is complete; orders.delivery_person_id itself is a
+	// users(id) FK (see AssignDeliveryPerson / GetActiveTask), not the
+	// delivery_profiles row id, so ClaimOrder takes userID, not profile.ID.
+	profile, err := s.deliveryRepo.GetProfileByUserID(c.Context(), userID)
+	if err != nil {
+		return response.BadRequest(c, "Complete delivery onboarding before accepting jobs")
+	}
+	// is_active is the real approval gate (set by the rider's fleet, or by
+	// platform admin for a direct-to-platform rider) — distinct from
+	// is_online, which only means "currently on shift".
+	if !profile.IsActive {
+		return response.Forbidden(c, "Your delivery registration is still pending approval")
+	}
+
+	claimed, err := s.deliveryRepo.ClaimOrder(c.Context(), orderId, userID)
+	if err != nil {
+		return response.InternalError(c, "Failed to claim order")
+	}
+	if !claimed {
+		return response.Conflict(c, "This order was already claimed by another partner")
+	}
+
+	return response.Success(c, fiber.Map{
+		"message":  "Order claimed",
+		"order_id": orderId,
+	})
+}
+
+// PostDeliveryLocation handles POST /delivery/location — a periodic ping from
+// the delivery partner's app while an order is out for delivery. Persists the
+// position (deliveryRepo.UpdateLocation existed but had no caller anywhere)
+// and pushes it live to whoever is connected to
+// GET /ws/delivery/track/:orderId for that order (hub.BroadcastLocation also
+// existed but was never called — a customer connecting got one handshake
+// message and then silence forever).
+func (s *Server) PostDeliveryLocation(c *fiber.Ctx) error {
+	userID := getUserIDFromContext(c)
+	if userID == "" {
+		return response.Unauthorized(c, "")
+	}
+
+	var req struct {
+		OrderID string  `json:"order_id"`
+		Lat     float64 `json:"lat"`
+		Lng     float64 `json:"lng"`
+		Status  string  `json:"status"`
+		ETAMins int     `json:"eta_mins"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		return response.BadRequest(c, "Invalid request body")
+	}
+	if req.OrderID == "" {
+		return response.BadRequest(c, "order_id is required")
+	}
+
+	if err := s.deliveryRepo.UpdateLocation(c.Context(), userID, req.Lat, req.Lng); err != nil {
+		return response.InternalError(c, "Failed to update location")
+	}
+
+	if s.hub != nil {
+		s.hub.BroadcastLocation(&ws.LocationUpdate{
+			OrderID:   req.OrderID,
+			Lat:       req.Lat,
+			Lng:       req.Lng,
+			Status:    req.Status,
+			ETAMins:   req.ETAMins,
+			Timestamp: time.Now().UTC().Format(time.RFC3339),
+		})
+	}
+
+	return response.Success(c, fiber.Map{"message": "Location updated"})
 }
 
 // GetDeliveryActiveTask handles GET /delivery/active-task

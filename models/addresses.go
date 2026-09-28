@@ -29,6 +29,10 @@ type DisplayAddress struct {
 	AddressLine1  string     `json:"address_line_1"` // Required first address line
 	AddressLine2  *string    `json:"address_line_2"` // Optional second address line
 	AddressLine3  *string    `json:"address_line_3"` // Optional third address line
+	ZIPPin        string     `json:"zip_pin"`
+	City          *string    `json:"city"`
+	State         *string    `json:"state"`
+	Type          string     `json:"type"`
 	MobileNo      string     `json:"mobileno"`
 	CreatedOn     *time.Time `json:"created_at"`
 	LastUpdatedOn *time.Time `json:"updated_at"`

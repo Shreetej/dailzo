@@ -5,10 +5,21 @@ import (
 	"dailzo/config"
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+func envInt(key string, fallback int32) int32 {
+	if v, ok := os.LookupEnv(key); ok {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return int32(n)
+		}
+	}
+	return fallback
+}
 
 var DB *pgxpool.Pool
 
@@ -24,9 +35,11 @@ func ConnectDatabase(cfg config.Config) {
 		log.Fatalf("Unable to parse database configuration: %v\n", err)
 	}
 
-	// Set connection pool options (optional, customize as needed)
-	config.MaxConns = 10                      // Maximum number of connections in the pool
-	config.MinConns = 2                       // Minimum number of connections in the pool
+	// Connection pool sizing — overridable via DB_MAX_CONNS/DB_MIN_CONNS since
+	// the right size depends on deployment (single dev instance vs. a
+	// production box under real concurrent load); 10/2 are dev-scale defaults.
+	config.MaxConns = envInt("DB_MAX_CONNS", 10)
+	config.MinConns = envInt("DB_MIN_CONNS", 2)
 	config.MaxConnLifetime = time.Hour        // Maximum lifetime of a connection
 	config.MaxConnIdleTime = 30 * time.Minute // Maximum idle time for a connection
 
@@ -45,19 +58,6 @@ func ConnectDatabase(cfg config.Config) {
 	}
 
 	log.Println("Connected to the database successfully!")
-	// Load the .sql file
-	// sqlFile := "DatabaseScripts&ERD/DailzoScript.sql"
-	// sqlBytes, err := os.ReadFile(sqlFile)
-	// if err != nil {
-	// 	log.Fatalf("Failed to read SQL file: %v\n", err)
-	// }
-	// sqlContent := string(sqlBytes)
-
-	// // Execute the SQL commands
-	// _, err = DB.Exec(ctx, sqlContent)
-	// if err != nil {
-	// 	log.Fatalf("Failed to execute SQL: %v\n", err)
-	// }
 
 	fmt.Println("All tables created successfully!")
 

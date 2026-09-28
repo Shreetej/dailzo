@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"dailzo/models"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -53,8 +54,9 @@ func (r *GroceryRepository) GetProfileByUserID(ctx context.Context, userID strin
 	query := `
 		SELECT id, user_id, store_name, owner_name, email, phone, address, city,
 			pincode, kyc_status, kyc_documents, fssai_license, gst_number, pan_number,
-			payout_status, bank_details, working_hours, is_active, rating,
-			total_orders, commission_rate, created_on, last_updated_on
+			payout_status, bank_details, working_hours,
+			home_delivery, accepts_online_payment, store_type, store_size, service_area,
+			is_active, rating, total_orders, commission_rate, created_on, last_updated_on
 		FROM grocery_profiles
 		WHERE user_id = $1`
 
@@ -65,6 +67,8 @@ func (r *GroceryRepository) GetProfileByUserID(ctx context.Context, userID strin
 		&profile.Pincode, &profile.KYCStatus, &profile.KYCDocuments,
 		&profile.FSSAILicense, &profile.GSTNumber, &profile.PANNumber,
 		&profile.PayoutStatus, &profile.BankDetails, &profile.WorkingHours,
+		&profile.HomeDelivery, &profile.AcceptsOnlinePayment, &profile.StoreType,
+		&profile.StoreSize, &profile.ServiceArea,
 		&profile.IsActive, &profile.Rating, &profile.TotalOrders,
 		&profile.CommissionRate, &profile.CreatedOn, &profile.LastUpdatedOn,
 	)
@@ -76,6 +80,71 @@ func (r *GroceryRepository) GetProfileByUserID(ctx context.Context, userID strin
 		return nil, fmt.Errorf("failed to get grocery profile: %w", err)
 	}
 	return &profile, nil
+}
+
+// GetSettings returns the vendor's store settings (delivery/payment toggles,
+// store type/size, service area) for GET /grocery/settings.
+func (r *GroceryRepository) GetSettings(ctx context.Context, userID string) (*models.GroceryStoreSettings, error) {
+	profile, err := r.GetProfileByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	return &models.GroceryStoreSettings{
+		HomeDelivery:         profile.HomeDelivery,
+		AcceptsOnlinePayment: profile.AcceptsOnlinePayment,
+		StoreType:            profile.StoreType,
+		StoreSize:            profile.StoreSize,
+		ServiceArea:          profile.ServiceArea,
+	}, nil
+}
+
+// GetDocuments returns the vendor's KYC document checklist for
+// GET /grocery/documents, derived from the required onboarding fields
+// (FSSAI/GST/PAN) rather than invented placeholder rows — a document is
+// "uploaded" once its corresponding profile field was filled in during
+// registration, "missing" otherwise. There's no separate document upload
+// flow yet, so this reflects the real onboarding state, not a mock.
+func (r *GroceryRepository) GetDocuments(ctx context.Context, userID string) ([]models.GroceryDocument, error) {
+	profile, err := r.GetProfileByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	status := func(value string) string {
+		if value == "" {
+			return "missing"
+		}
+		if profile.KYCStatus == "verified" {
+			return "verified"
+		}
+		return "uploaded"
+	}
+
+	return []models.GroceryDocument{
+		{Name: "FSSAI License", Status: status(profile.FSSAILicense)},
+		{Name: "GST Certificate", Status: status(profile.GSTNumber)},
+		{Name: "PAN Card", Status: status(profile.PANNumber)},
+	}, nil
+}
+
+// GetPayoutAccount returns the vendor's bank payout account for
+// GET /grocery/payout-account, parsed from the profile's bank_details JSON
+// column (populated once bank-account collection is added to onboarding).
+// Until then this returns empty fields rather than a 404 or fake data — the
+// vendor app already renders '—' for empty strings.
+func (r *GroceryRepository) GetPayoutAccount(ctx context.Context, userID string) (*models.GroceryPayoutAccount, error) {
+	profile, err := r.GetProfileByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	account := &models.GroceryPayoutAccount{}
+	if profile.BankDetails != nil && *profile.BankDetails != "" {
+		if jsonErr := json.Unmarshal([]byte(*profile.BankDetails), account); jsonErr != nil {
+			return nil, fmt.Errorf("failed to parse bank details: %w", jsonErr)
+		}
+	}
+	return account, nil
 }
 
 // GetProfileByID gets grocery profile by profile ID

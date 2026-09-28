@@ -4,7 +4,26 @@ import (
 	"crypto/rand"
 	"math"
 	"math/big"
+	"strings"
 )
+
+// SplitCSV turns a comma-separated id list (as stored in the users table's
+// favourite_restaurants/favourite_foods TEXT columns) into a clean []string
+// for JSON responses — never nil, and never containing the empty-string
+// entries strings.Split produces for an empty or trailing-comma value.
+func SplitCSV(s *string) []string {
+	out := []string{}
+	if s == nil || *s == "" {
+		return out
+	}
+	for _, part := range strings.Split(*s, ",") {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
+}
 
 // GenerateOTP generates a random 6-digit OTP
 func GenerateOTP() string {

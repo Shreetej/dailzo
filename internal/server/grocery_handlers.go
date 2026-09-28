@@ -157,3 +157,48 @@ func (s *Server) GetGroceryPayoutSummary(c *fiber.Ctx) error {
 
 	return response.Success(c, summary)
 }
+
+// GetGrocerySettings handles GET /grocery/settings
+func (s *Server) GetGrocerySettings(c *fiber.Ctx) error {
+	userID := getUserIDFromContext(c)
+	if userID == "" {
+		return response.Unauthorized(c, "")
+	}
+
+	settings, err := s.groceryRepo.GetSettings(c.Context(), userID)
+	if err != nil {
+		return response.NotFound(c, "Grocery profile not found")
+	}
+
+	return response.Success(c, settings)
+}
+
+// GetGroceryDocuments handles GET /grocery/documents
+func (s *Server) GetGroceryDocuments(c *fiber.Ctx) error {
+	userID := getUserIDFromContext(c)
+	if userID == "" {
+		return response.Unauthorized(c, "")
+	}
+
+	documents, err := s.groceryRepo.GetDocuments(c.Context(), userID)
+	if err != nil {
+		return response.NotFound(c, "Grocery profile not found")
+	}
+
+	return response.Success(c, documents)
+}
+
+// GetGroceryPayoutAccount handles GET /grocery/payout-account
+func (s *Server) GetGroceryPayoutAccount(c *fiber.Ctx) error {
+	userID := getUserIDFromContext(c)
+	if userID == "" {
+		return response.Unauthorized(c, "")
+	}
+
+	account, err := s.groceryRepo.GetPayoutAccount(c.Context(), userID)
+	if err != nil {
+		return response.NotFound(c, "Grocery profile not found")
+	}
+
+	return response.Success(c, account)
+}

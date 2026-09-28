@@ -34,19 +34,7 @@ func (s *Server) PatchOrdersOrderIdStatus(c *fiber.Ctx, orderId string) error {
 		return response.BadRequest(c, "Status is required")
 	}
 
-	// Validate status values
-	validStatuses := map[string]bool{
-		"pending":    true,
-		"confirmed":  true,
-		"preparing":  true,
-		"ready":      true,
-		"picked_up":  true,
-		"in_transit": true,
-		"delivered":  true,
-		"cancelled":  true,
-	}
-
-	if !validStatuses[status] {
+	if !models.IsValidOrderStatus(status) {
 		return response.BadRequest(c, "Invalid status value")
 	}
 

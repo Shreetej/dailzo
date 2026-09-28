@@ -5,12 +5,42 @@ import (
 	"dailzo/models"
 	"dailzo/repository"
 	"dailzo/utils"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
 )
+
+// safeUserMap strips the password hash (and shapes the rest into the fields
+// the apps already expect) before a models.User ever reaches ctx.JSON.
+// Never pass a raw models.User to a response — always go through this.
+func safeUserMap(u *models.User) fiber.Map {
+	favouriteFoods := utils.SplitCSV(u.FavouriteFoods)
+	favouriteRestaurants := utils.SplitCSV(u.FavouriteRestaurants)
+	return fiber.Map{
+		"id":                    u.ID,
+		"username":              u.Username,
+		"email":                 u.Email,
+		"mobile_no":             u.MobileNo,
+		"first_name":            u.FirstName,
+		"middle_name":           u.MiddleName,
+		"last_name":             u.LastName,
+		"user_type":             u.UserType,
+		"address_id":            u.AddressID,
+		"profile_image_url":     u.ProfileImageURL,
+		"bio":                   u.Bio,
+		"date_of_birth":         u.DateOfBirth,
+		"gender":                u.Gender,
+		"created_on":            u.CreatedOn,
+		"last_updated_on":       u.LastUpdatedOn,
+		"created_by":            u.CreatedBy,
+		"last_modified_by":      u.LastModifiedBy,
+		"favourite_foods":       favouriteFoods,
+		"favourite_restaurants": favouriteRestaurants,
+	}
+}
 
 type UserController struct {
 	repo    *repository.UserRepository
@@ -56,13 +86,10 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 	}
 
 	// Generate JWT token
-	token, err := utils.GenerateJWT(dbUser.ID)
+	token, err := utils.GenerateJWT(dbUser.ID, dbUser.UserType)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not generate token"})
 	}
-
-	// Update global user ID
-	globals.UpdateUserID(dbUser.ID)
 
 	// Set minimal session data for performance
 	sess, err := globals.Store.Get(ctx)
@@ -72,36 +99,9 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 		sess.Save()
 	}
 
-	// Return all user fields with token included
-	favouriteFoods := []string{}
-	if dbUser.FavouriteFoods != nil {
-		favouriteFoods = *dbUser.FavouriteFoods
-	}
-	favouriteRestaurants := []string{}
-	if dbUser.FavouriteRestaurants != nil {
-		favouriteRestaurants = *dbUser.FavouriteRestaurants
-	}
-
-	return ctx.JSON(fiber.Map{
-		"id":                    dbUser.ID,
-		"username":              dbUser.Username,
-		"email":                 dbUser.Email,
-		"mobile_no":             dbUser.MobileNo,
-		"first_name":            dbUser.FirstName,
-		"middle_name":           dbUser.MiddleName,
-		"last_name":             dbUser.LastName,
-		"user_type":             dbUser.UserType,
-		"address_id":            dbUser.AddressID,
-		"profile_image_url":     dbUser.ProfileImageURL,
-		"bio":                   dbUser.Bio,
-		"date_of_birth":         dbUser.DateOfBirth,
-		"gender":                dbUser.Gender,
-		"created_by":            dbUser.CreatedBy,
-		"last_modified_by":      dbUser.LastModifiedBy,
-		"favourite_foods":       favouriteFoods,
-		"favourite_restaurants": favouriteRestaurants,
-		"token":                 token,
-	})
+	body := safeUserMap(dbUser)
+	body["token"] = token
+	return ctx.JSON(body)
 }
 
 func (c *UserController) GetUser(ctx *fiber.Ctx) error {
@@ -111,23 +111,39 @@ func (c *UserController) GetUser(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
 
-	return ctx.JSON(user)
+	return ctx.JSON(safeUserMap(user))
 }
 
+// GetUserById returns another user's profile by id. Only the user themself or
+// an admin may fetch it — otherwise any authenticated account could enumerate
+// every other user's profile (and, before safeUserMap, their password hash).
 func (c *UserController) GetUserById(ctx *fiber.Ctx) error {
 	userID := ctx.Params("id")
 	if userID == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Error in Id"})
+	}
+	callerID, _ := ctx.Locals("user_id").(string)
+	callerType, _ := ctx.Locals("user_type").(string)
+	if callerID != userID && callerType != "admin" {
+		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "not permitted to view this user"})
 	}
 	user, err := c.repo.GetUserByID(ctx.Context(), string(userID))
 	if err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
 
-	return ctx.JSON(user)
+	return ctx.JSON(safeUserMap(user))
 }
 
+// GetUsers lists every user — admin-only (also enforced at the route via
+// middleware.AdminOnly(), this is a defense-in-depth check).
 func (c *UserController) GetUsers(ctx *fiber.Ctx) error {
+	if callerType, _ := ctx.Locals("user_type").(string); callerType != "admin" {
+		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "admin only"})
+	}
+	// GetUsers already returns models.DisplayUser (id/username/email/mobileno/
+	// timestamps only) — no password field exists on that type, so it's safe
+	// to return directly without going through safeUserMap.
 	users, err := c.repo.GetUsers(ctx.Context())
 	if err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
@@ -282,6 +298,9 @@ func (c *UserController) SendOTP(ctx *fiber.Ctx) error {
 
 	otp, err := c.otpRepo.CreateOTP(ctx.Context(), user.ID, otpType)
 	if err != nil {
+		if errors.Is(err, repository.ErrOTPRateLimited) {
+			return ctx.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{"error": err.Error()})
+		}
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not generate OTP"})
 	}
 
@@ -343,7 +362,13 @@ func (c *UserController) VerifyOTPLogin(ctx *fiber.Ctx) error {
 
 	// Verify OTP
 	valid, err := c.otpRepo.VerifyOTP(ctx.Context(), userID, request.OTP)
-	if err != nil || !valid {
+	if err != nil {
+		if errors.Is(err, repository.ErrOTPLocked) {
+			return ctx.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{"error": err.Error()})
+		}
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid OTP"})
+	}
+	if !valid {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid OTP"})
 	}
 
@@ -360,7 +385,7 @@ func (c *UserController) VerifyOTPLogin(ctx *fiber.Ctx) error {
 	fmt.Printf("Time taken to get user details: %s\n", elapsedTime)
 
 	// Generate JWT token
-	token, err := utils.GenerateJWT(user.ID)
+	token, err := utils.GenerateJWT(user.ID, user.UserType)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not generate token"})
 	}
@@ -378,14 +403,8 @@ func (c *UserController) VerifyOTPLogin(ctx *fiber.Ctx) error {
 	fmt.Printf("Total time for OTP login: %s\n", elapsedTime)
 
 	// Return all user fields with token included
-	favouriteFoods := []string{}
-	if user.FavouriteFoods != nil {
-		favouriteFoods = *user.FavouriteFoods
-	}
-	favouriteRestaurants := []string{}
-	if user.FavouriteRestaurants != nil {
-		favouriteRestaurants = *user.FavouriteRestaurants
-	}
+	favouriteFoods := utils.SplitCSV(user.FavouriteFoods)
+	favouriteRestaurants := utils.SplitCSV(user.FavouriteRestaurants)
 
 	return ctx.JSON(fiber.Map{
 		"id":                    user.ID,

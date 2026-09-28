@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"dailzo/globals"
 	"dailzo/models"
 	"errors"
 	"fmt"
@@ -38,8 +37,8 @@ func (r *OfferRepository) CreateOffer(ctx context.Context, offer models.Offer) (
 		offer.IsActive,
 		time.Now(),
 		time.Now(),
-		globals.GetLoogedInUserId(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
+		LoggedInUserID(ctx),
 	).Scan(&offer.ID)
 
 	if err != nil {
@@ -106,7 +105,7 @@ func (r *OfferRepository) UpdateOffer(ctx context.Context, offer models.Offer) e
 		offer.EndDate,
 		offer.IsActive,
 		time.Now(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
 		offer.ID,
 	)
 
@@ -133,8 +132,8 @@ func (r *OfferRepository) CreateCondition(ctx context.Context, condition models.
 		condition.Value,
 		time.Now(),
 		time.Now(),
-		globals.GetLoogedInUserId(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
+		LoggedInUserID(ctx),
 	).Scan(&condition.ID)
 
 	if err != nil {
@@ -198,8 +197,8 @@ func (r *OfferRepository) CreateApplicableEntity(ctx context.Context, entity mod
 		entity.EntityID,
 		time.Now(),
 		time.Now(),
-		globals.GetLoogedInUserId(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
+		LoggedInUserID(ctx),
 	).Scan(&entity.ID)
 
 	if err != nil {

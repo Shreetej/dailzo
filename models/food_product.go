@@ -11,6 +11,8 @@ type FoodProduct struct {
 	Name           string    `json:"name" db:"name"`                         // Name of the food product
 	Description    string    `json:"description" db:"description"`           // Description of the product
 	Category       string    `json:"category" db:"category"`                 // Category like Pizza, Grocery, etc.
+	CategoryID     *string   `json:"category_id,omitempty" db:"category_id"` // FK into the catalog category hierarchy (used by customer-app category filtering)
+	Kind           string    `json:"kind,omitempty" db:"kind"`               // 'food' | 'grocery' — distinguishes the two catalog verticals sharing this table
 	Type           string    `json:"type" db:"type"`                         // Food type (Veg, Non-Veg, Egg)
 	Price          float64   `json:"price" db:"price"`                       // Price of the product
 	ImageURL       string    `json:"image_url" db:"image_url"`               // URL for the product image

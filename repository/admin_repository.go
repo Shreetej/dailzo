@@ -23,9 +23,14 @@ func NewAdminRepository(db *pgxpool.Pool) *AdminRepository {
 
 // GetApprovals gets all pending approvals
 func (r *AdminRepository) GetApprovals(ctx context.Context) ([]models.Approval, error) {
+	// COALESCE(notes, '') — models.Approval.Notes is a plain (non-pointer)
+	// string, but freshly-queued approvals (registration_repository.go
+	// queueApproval) leave notes NULL until an admin reviews them; scanning
+	// NULL into *string fails, which silently 500'd this entire endpoint the
+	// first time the approvals table ever had a real row in it.
 	query := `
 		SELECT id, entity_type, entity_id, status, submitted_at, reviewed_at,
-			reviewed_by, notes, documents
+			reviewed_by, COALESCE(notes, ''), documents
 		FROM approvals
 		WHERE status = 'pending'
 		ORDER BY submitted_at ASC`
@@ -80,6 +85,13 @@ func (r *AdminRepository) enrichApprovalWithEntityDetails(ctx context.Context, a
 		r.db.QueryRow(ctx, query, approval.EntityID).Scan(&name, &phone)
 		approval.EntityName = name
 		approval.EntityPhone = phone
+	case "delivery_vendor":
+		var name, phone, city string
+		query := `SELECT company_name, phone, city FROM delivery_vendor_profiles WHERE id = $1`
+		r.db.QueryRow(ctx, query, approval.EntityID).Scan(&name, &phone, &city)
+		approval.EntityName = name
+		approval.EntityPhone = phone
+		approval.EntityCity = city
 	}
 }
 
@@ -124,7 +136,9 @@ func (r *AdminRepository) Approve(ctx context.Context, id, notes, reviewerID str
 	case "grocery":
 		entityQuery = `UPDATE grocery_profiles SET kyc_status = 'verified', is_active = true, last_updated_on = $1 WHERE id = $2`
 	case "restaurant":
-		entityQuery = `UPDATE restaurants SET last_updated_on = $1 WHERE id = $2`
+		entityQuery = `UPDATE restaurants SET kyc_status = 'verified', is_active = true, last_updated_on = $1 WHERE id = $2`
+	case "delivery_vendor":
+		entityQuery = `UPDATE delivery_vendor_profiles SET kyc_status = 'verified', is_active = true, last_updated_on = $1 WHERE id = $2`
 	}
 
 	if entityQuery != "" {
@@ -134,7 +148,50 @@ func (r *AdminRepository) Approve(ctx context.Context, id, notes, reviewerID str
 		}
 	}
 
+	// Mirror the decision onto vendor_registrations so the vendor app (which
+	// reads its onboarding status from GetVendorRegistration, not from
+	// grocery_profiles/restaurants/delivery_vendor_profiles directly) can
+	// tell the user they're approved. entity_id here is the profile row just
+	// updated above, not a user id, so resolve the owning user first.
+	if entityType == "grocery" || entityType == "restaurant" || entityType == "delivery_vendor" {
+		if err := r.syncVendorRegistrationStatus(ctx, tx, entityType, entityID, "approved", now); err != nil {
+			return err
+		}
+	}
+
 	return tx.Commit(ctx)
+}
+
+// syncVendorRegistrationStatus resolves the user_id that owns the given
+// grocery_profiles/restaurants/delivery_vendor_profiles row and updates
+// their vendor_registrations status to match the approval decision. A
+// missing vendor_registrations row (e.g. the profile was created some other
+// way) is not an error — there's simply nothing to sync.
+func (r *AdminRepository) syncVendorRegistrationStatus(ctx context.Context, tx pgx.Tx, entityType, entityID, status string, now time.Time) error {
+	var ownerUserID string
+	var err error
+	switch entityType {
+	case "grocery":
+		err = tx.QueryRow(ctx, `SELECT user_id FROM grocery_profiles WHERE id = $1`, entityID).Scan(&ownerUserID)
+	case "restaurant":
+		err = tx.QueryRow(ctx, `SELECT created_by FROM restaurants WHERE id = $1`, entityID).Scan(&ownerUserID)
+	case "delivery_vendor":
+		err = tx.QueryRow(ctx, `SELECT user_id FROM delivery_vendor_profiles WHERE id = $1`, entityID).Scan(&ownerUserID)
+	}
+	if err == pgx.ErrNoRows || ownerUserID == "" {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("failed to resolve registration owner: %w", err)
+	}
+
+	_, err = tx.Exec(ctx,
+		`UPDATE vendor_registrations SET status = $1, last_updated_on = $2 WHERE user_id = $3`,
+		status, now, ownerUserID)
+	if err != nil {
+		return fmt.Errorf("failed to sync vendor registration status: %w", err)
+	}
+	return nil
 }
 
 // Reject rejects a pending approval
@@ -176,6 +233,10 @@ func (r *AdminRepository) Reject(ctx context.Context, id, notes, reviewerID stri
 		entityQuery = `UPDATE delivery_profiles SET kyc_status = 'rejected', last_updated_on = $1 WHERE id = $2`
 	case "grocery":
 		entityQuery = `UPDATE grocery_profiles SET kyc_status = 'rejected', last_updated_on = $1 WHERE id = $2`
+	case "restaurant":
+		entityQuery = `UPDATE restaurants SET kyc_status = 'rejected', last_updated_on = $1 WHERE id = $2`
+	case "delivery_vendor":
+		entityQuery = `UPDATE delivery_vendor_profiles SET kyc_status = 'rejected', last_updated_on = $1 WHERE id = $2`
 	}
 
 	if entityQuery != "" {
@@ -185,10 +246,16 @@ func (r *AdminRepository) Reject(ctx context.Context, id, notes, reviewerID stri
 		}
 	}
 
+	if entityType == "grocery" || entityType == "restaurant" || entityType == "delivery_vendor" {
+		if err := r.syncVendorRegistrationStatus(ctx, tx, entityType, entityID, "rejected", now); err != nil {
+			return err
+		}
+	}
+
 	return tx.Commit(ctx)
 }
 
-// GetPartners gets all partners (delivery, grocery, restaurant)
+// GetPartners gets all partners (delivery, grocery, restaurant, delivery_vendor)
 func (r *AdminRepository) GetPartners(ctx context.Context) ([]models.Partner, error) {
 	var partners []models.Partner
 
@@ -248,6 +315,34 @@ func (r *AdminRepository) GetPartners(ctx context.Context) ([]models.Partner, er
 	}
 	rows.Close()
 
+	// Get delivery vendor (fleet/agency) partners
+	deliveryVendorQuery := `
+		SELECT id, 'delivery_vendor' as type, company_name as name, phone, email, city,
+			CASE WHEN is_active THEN 'active' ELSE 'inactive' END as status,
+			kyc_status, rating, 0 as total_orders, 0 as total_trips, created_on
+		FROM delivery_vendor_profiles
+		ORDER BY created_on DESC`
+
+	rows, err = r.db.Query(ctx, deliveryVendorQuery)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query delivery vendor partners: %w", err)
+	}
+
+	for rows.Next() {
+		var p models.Partner
+		err := rows.Scan(
+			&p.ID, &p.Type, &p.Name, &p.Phone, &p.Email, &p.City,
+			&p.Status, &p.KYCStatus, &p.Rating, &p.TotalOrders,
+			&p.TotalTrips, &p.JoinedOn,
+		)
+		if err != nil {
+			rows.Close()
+			return nil, fmt.Errorf("failed to scan delivery vendor partner: %w", err)
+		}
+		partners = append(partners, p)
+	}
+	rows.Close()
+
 	// Check for suspensions
 	for i := range partners {
 		r.checkPartnerSuspension(ctx, &partners[i])
@@ -295,13 +390,68 @@ func (r *AdminRepository) SuspendPartner(ctx context.Context, id, partnerType, r
 		return fmt.Errorf("failed to create suspension: %w", err)
 	}
 
-	// Update partner status based on type
+	// Update partner status based on type. "delivery" also clears is_active
+	// (not just is_online) — is_online is merely "currently on shift", which
+	// a suspended rider could otherwise flip back on and keep receiving jobs
+	// through, since PostDeliveryAvailableClaim gates on is_active, not
+	// is_online.
 	var updateQuery string
 	switch partnerType {
 	case "delivery":
-		updateQuery = `UPDATE delivery_profiles SET is_online = false, last_updated_on = $1 WHERE id = $2`
+		updateQuery = `UPDATE delivery_profiles SET is_online = false, is_active = false, last_updated_on = $1 WHERE id = $2`
 	case "grocery":
 		updateQuery = `UPDATE grocery_profiles SET is_active = false, last_updated_on = $1 WHERE id = $2`
+	case "restaurant":
+		updateQuery = `UPDATE restaurants SET is_active = false, last_updated_on = $1 WHERE id = $2`
+	case "delivery_vendor":
+		updateQuery = `UPDATE delivery_vendor_profiles SET is_active = false, last_updated_on = $1 WHERE id = $2`
+	}
+
+	if updateQuery != "" {
+		_, err = tx.Exec(ctx, updateQuery, now, id)
+		if err != nil {
+			return fmt.Errorf("failed to update partner status: %w", err)
+		}
+	}
+
+	return tx.Commit(ctx)
+}
+
+// ResumePartner reinstates a suspended partner: closes out the open
+// suspension record (reinstated_on/reinstated_by, mirroring the fields
+// SuspendPartner leaves for it) and flips the partner back to active. A
+// reinstated rider's is_online stays false — they go through the normal
+// go-online flow rather than being auto-placed back on shift.
+func (r *AdminRepository) ResumePartner(ctx context.Context, id, partnerType, adminID string) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	now := time.Now()
+	tag, err := tx.Exec(ctx, `
+		UPDATE partner_suspensions
+		SET reinstated_on = $1, reinstated_by = $2
+		WHERE partner_id = $3 AND partner_type = $4 AND reinstated_on IS NULL`,
+		now, adminID, id, partnerType)
+	if err != nil {
+		return fmt.Errorf("failed to close suspension record: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return errors.New("partner is not currently suspended")
+	}
+
+	var updateQuery string
+	switch partnerType {
+	case "delivery":
+		updateQuery = `UPDATE delivery_profiles SET is_active = true, last_updated_on = $1 WHERE id = $2`
+	case "grocery":
+		updateQuery = `UPDATE grocery_profiles SET is_active = true, last_updated_on = $1 WHERE id = $2`
+	case "restaurant":
+		updateQuery = `UPDATE restaurants SET is_active = true, last_updated_on = $1 WHERE id = $2`
+	case "delivery_vendor":
+		updateQuery = `UPDATE delivery_vendor_profiles SET is_active = true, last_updated_on = $1 WHERE id = $2`
 	}
 
 	if updateQuery != "" {
@@ -316,13 +466,20 @@ func (r *AdminRepository) SuspendPartner(ctx context.Context, id, partnerType, r
 
 // GetComplaints gets all complaints
 func (r *AdminRepository) GetComplaints(ctx context.Context) ([]models.Complaint, error) {
+	// culprit/reason_code/confidence/resolution_notes are all nullable
+	// columns with no default (nothing currently populates the first three —
+	// there's no automated fraud-attribution service yet), and
+	// customer_name/customer_phone go NULL whenever the LEFT JOIN misses.
+	// models.Complaint scans these into plain (non-pointer) string/float64
+	// fields, so without COALESCE this crashes the instant a real complaint
+	// exists — untriggered until now only because the table was empty.
 	query := `
 		SELECT c.id, c.order_id, c.user_id, c.complaint_type, c.description,
-			c.status, c.priority, c.culprit, c.reason_code, c.confidence,
-			c.evidence_timeline, c.created_on, c.resolved_on, c.resolved_by,
-			c.resolution_notes, c.refund_amount,
-			u.first_name || ' ' || COALESCE(u.last_name, '') as customer_name,
-			u.mobileno as customer_phone,
+			c.status, c.priority, COALESCE(c.culprit, ''), COALESCE(c.reason_code, ''),
+			COALESCE(c.confidence, 0), c.evidence_timeline, c.created_on, c.resolved_on,
+			c.resolved_by, COALESCE(c.resolution_notes, ''), c.refund_amount,
+			COALESCE(u.first_name || ' ' || COALESCE(u.last_name, ''), '') as customer_name,
+			COALESCE(u.mobileno, '') as customer_phone,
 			COALESCE(o.total_amount, 0) as order_amount
 		FROM complaints c
 		LEFT JOIN users u ON c.user_id = u.id
@@ -508,6 +665,172 @@ func (r *AdminRepository) NotifyLead(ctx context.Context, id, channel, message s
 	// based on the channel parameter
 
 	return nil
+}
+
+// ordersFilterForPartner returns the SQL WHERE fragment (and its single $1
+// arg) that scopes the orders table to one partner. delivery_vendor and
+// delivery (individual rider) both resolve through delivery_profiles since
+// orders.delivery_person_id references users.id, not delivery_profiles.id.
+// Known limitation: grocery orders currently never get their restaurant_id
+// populated at checkout (a pre-existing bug in storefront_repository.go's
+// order creation, outside this change's scope), so grocery performance will
+// read zero orders until that's fixed — the query itself is correct.
+func ordersFilterForPartner(partnerType string) (whereClause string, ok bool) {
+	switch partnerType {
+	case "restaurant":
+		return `restaurant_id = $1 AND cart_type = 'food'`, true
+	case "grocery":
+		return `restaurant_id = $1 AND cart_type = 'grocery'`, true
+	case "delivery_vendor":
+		return `delivery_person_id IN (SELECT user_id FROM delivery_profiles WHERE vendor_id = $1)`, true
+	case "delivery":
+		return `delivery_person_id = (SELECT user_id FROM delivery_profiles WHERE id = $1)`, true
+	default:
+		return "", false
+	}
+}
+
+// GetPartnerPerformance returns a partner's real order/revenue trend over the
+// last `days` days, plus lifetime totals, completion rate, and current
+// rating — backing the admin "View Performance" action.
+func (r *AdminRepository) GetPartnerPerformance(ctx context.Context, id, partnerType string, days int) (*models.PartnerPerformance, error) {
+	where, ok := ordersFilterForPartner(partnerType)
+	if !ok {
+		return nil, fmt.Errorf("unknown partner type %q", partnerType)
+	}
+
+	perf := &models.PartnerPerformance{PartnerID: id, PartnerType: partnerType, Daily: []models.DailyStat{}}
+
+	summaryQuery := fmt.Sprintf(`
+		SELECT COUNT(*),
+		       COALESCE(SUM(total_amount), 0),
+		       COUNT(*) FILTER (WHERE status = 'delivered')
+		FROM orders WHERE %s`, where)
+	var delivered int
+	if err := r.db.QueryRow(ctx, summaryQuery, id).Scan(&perf.TotalOrders, &perf.TotalRevenue, &delivered); err != nil {
+		return nil, fmt.Errorf("failed to summarize partner orders: %w", err)
+	}
+	if perf.TotalOrders > 0 {
+		perf.CompletionRate = float64(delivered) / float64(perf.TotalOrders) * 100
+	}
+
+	dailyQuery := fmt.Sprintf(`
+		SELECT DATE(order_date) AS d, COUNT(*), COALESCE(SUM(total_amount), 0)
+		FROM orders
+		WHERE %s AND order_date >= now() - make_interval(days => $2)
+		GROUP BY DATE(order_date)
+		ORDER BY d`, where)
+	rows, err := r.db.Query(ctx, dailyQuery, id, days)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch partner daily trend: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var d models.DailyStat
+		var date time.Time
+		if err := rows.Scan(&date, &d.Orders, &d.Revenue); err != nil {
+			return nil, fmt.Errorf("failed to scan partner daily trend: %w", err)
+		}
+		d.Date = date.Format("2006-01-02")
+		perf.Daily = append(perf.Daily, d)
+	}
+
+	var ratingTable string
+	switch partnerType {
+	case "restaurant":
+		ratingTable = "restaurants"
+	case "grocery":
+		ratingTable = "grocery_profiles"
+	case "delivery_vendor":
+		ratingTable = "delivery_vendor_profiles"
+	case "delivery":
+		ratingTable = "delivery_profiles"
+	}
+	if ratingTable != "" {
+		_ = r.db.QueryRow(ctx, fmt.Sprintf(`SELECT COALESCE(rating, 0) FROM %s WHERE id = $1`, ratingTable), id).
+			Scan(&perf.Rating)
+	}
+
+	return perf, nil
+}
+
+// commissionTableForPartner returns the table (all admin-commission-eligible
+// partner types: restaurant, grocery, delivery_vendor — individual riders are
+// paid per-delivery, not on a commission split) holding commission_rate.
+func commissionTableForPartner(partnerType string) (table string, ok bool) {
+	switch partnerType {
+	case "restaurant":
+		return "restaurants", true
+	case "grocery":
+		return "grocery_profiles", true
+	case "delivery_vendor":
+		return "delivery_vendor_profiles", true
+	default:
+		return "", false
+	}
+}
+
+// GetPartnerCommission reads a partner's current commission rate.
+func (r *AdminRepository) GetPartnerCommission(ctx context.Context, id, partnerType string) (*models.PartnerCommission, error) {
+	table, ok := commissionTableForPartner(partnerType)
+	if !ok {
+		return nil, fmt.Errorf("partner type %q has no commission rate", partnerType)
+	}
+	c := &models.PartnerCommission{PartnerID: id, PartnerType: partnerType}
+	err := r.db.QueryRow(ctx, fmt.Sprintf(`SELECT commission_rate FROM %s WHERE id = $1`, table), id).
+		Scan(&c.CommissionRate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch commission rate: %w", err)
+	}
+	return c, nil
+}
+
+// SetPartnerCommission updates a partner's commission rate (0-100).
+func (r *AdminRepository) SetPartnerCommission(ctx context.Context, id, partnerType string, rate float64) error {
+	table, ok := commissionTableForPartner(partnerType)
+	if !ok {
+		return fmt.Errorf("partner type %q has no commission rate", partnerType)
+	}
+	if rate < 0 || rate > 100 {
+		return errors.New("commission rate must be between 0 and 100")
+	}
+	tag, err := r.db.Exec(ctx, fmt.Sprintf(`UPDATE %s SET commission_rate = $1 WHERE id = $2`, table), rate, id)
+	if err != nil {
+		return fmt.Errorf("failed to update commission rate: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return errors.New("partner not found")
+	}
+	return nil
+}
+
+// GetRevenueTimeseries returns real day-by-day platform order count + revenue
+// for the last `days` days, backing the admin Reports "Revenue Trend" chart
+// (previously 7 hardcoded fake values).
+func (r *AdminRepository) GetRevenueTimeseries(ctx context.Context, days int) ([]models.DailyStat, error) {
+	query := `
+		SELECT DATE(order_date) AS d, COUNT(*), COALESCE(SUM(total_amount), 0)
+		FROM orders
+		WHERE order_date >= now() - make_interval(days => $1)
+		GROUP BY DATE(order_date)
+		ORDER BY d`
+	rows, err := r.db.Query(ctx, query, days)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch revenue timeseries: %w", err)
+	}
+	defer rows.Close()
+
+	out := []models.DailyStat{}
+	for rows.Next() {
+		var d models.DailyStat
+		var date time.Time
+		if err := rows.Scan(&date, &d.Orders, &d.Revenue); err != nil {
+			return nil, fmt.Errorf("failed to scan revenue timeseries: %w", err)
+		}
+		d.Date = date.Format("2006-01-02")
+		out = append(out, d)
+	}
+	return out, rows.Err()
 }
 
 // LogActivity logs an admin action

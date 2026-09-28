@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"dailzo/globals"
 	"dailzo/models"
 	"errors"
 	"time"
@@ -37,8 +36,8 @@ func (r *OrderItemRepository) CreateOrderItem(ctx context.Context, orderItem mod
 		orderItem.Price,
 		time.Now(),
 		time.Now(),
-		globals.GetLoogedInUserId(), // Assuming a function for getting logged-in user ID
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx), // Assuming a function for getting logged-in user ID
+		LoggedInUserID(ctx),
 	).Scan(&orderItem.ID)
 
 	if err != nil {
@@ -124,7 +123,7 @@ func (r *OrderItemRepository) UpdateOrderItem(ctx context.Context, orderItem mod
 		orderItem.Quantity,
 		orderItem.Price,
 		time.Now(),
-		globals.GetLoogedInUserId(),
+		LoggedInUserID(ctx),
 		orderItem.ID,
 	)
 

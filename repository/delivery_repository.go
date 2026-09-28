@@ -50,7 +50,7 @@ func (r *DeliveryRepository) GetProfileByUserID(ctx context.Context, userID stri
 		SELECT id, user_id, name, phone, city, vehicle_type, vehicle_number,
 			license_number, kyc_status, kyc_documents, rating, total_trips,
 			is_online, current_lat, current_lng, last_location_update,
-			working_hours, created_on, last_updated_on
+			working_hours, vendor_id, is_active, created_on, last_updated_on
 		FROM delivery_profiles
 		WHERE user_id = $1`
 
@@ -60,7 +60,8 @@ func (r *DeliveryRepository) GetProfileByUserID(ctx context.Context, userID stri
 		&profile.VehicleType, &profile.VehicleNumber, &profile.LicenseNumber,
 		&profile.KYCStatus, &profile.KYCDocuments, &profile.Rating, &profile.TotalTrips,
 		&profile.IsOnline, &profile.CurrentLat, &profile.CurrentLng, &profile.LastLocationUpdate,
-		&profile.WorkingHours, &profile.CreatedOn, &profile.LastUpdatedOn,
+		&profile.WorkingHours, &profile.VendorID, &profile.IsActive,
+		&profile.CreatedOn, &profile.LastUpdatedOn,
 	)
 
 	if err == pgx.ErrNoRows {
@@ -152,32 +153,97 @@ func (r *DeliveryRepository) GetActiveTask(ctx context.Context, userID string) (
 		return nil, err
 	}
 
-	query := `
-		SELECT id, order_id, delivery_person_id, status, pickup_lat, pickup_lng,
-			dropoff_lat, dropoff_lng, eta_mins, pickup_point, drop_point,
-			distance_km, assigned_at, accepted_at, picked_up_at, delivered_at,
-			cancelled_at, cancel_reason, notes
-		FROM delivery_tasks
-		WHERE delivery_person_id = $1 AND status NOT IN ('delivered', 'cancelled')
-		ORDER BY assigned_at DESC
-		LIMIT 1`
-
-	var task models.DeliveryTask
-	err = r.db.QueryRow(ctx, query, profile.ID).Scan(
-		&task.ID, &task.OrderID, &task.DeliveryPersonID, &task.Status,
-		&task.PickupLat, &task.PickupLng, &task.DropoffLat, &task.DropoffLng,
-		&task.ETAMins, &task.PickupPoint, &task.DropPoint, &task.DistanceKm,
-		&task.AssignedAt, &task.AcceptedAt, &task.PickedUpAt, &task.DeliveredAt,
-		&task.CancelledAt, &task.CancelReason, &task.Notes,
-	)
-
+	// Derive the active task directly from the assigned order — this is the
+	// authoritative source (orders.status is what vendor/delivery/customer all
+	// read) and avoids null-scan fragility in the delivery_tasks table.
+	// orders.delivery_person_id is a users(id) FK (confirmed against the live
+	// schema: orders_delivery_person_id_fkey references users, not
+	// delivery_profiles) — so this filters on userID, not profile.ID, which
+	// are different values for any profile created via CreateProfile's "DLVR"
+	// id scheme.
+	var orderID, status, restaurantName, deliveryAddr string
+	var assignedAt time.Time
+	err = r.db.QueryRow(ctx, `
+		SELECT id, status, COALESCE(restaurant_name,''), COALESCE(delivery_address,''),
+		       COALESCE(last_updated_on, order_date, NOW())
+		FROM orders
+		WHERE delivery_person_id = $1 AND status NOT IN ('delivered','cancelled')
+		ORDER BY last_updated_on DESC NULLS LAST
+		LIMIT 1`, userID).Scan(&orderID, &status, &restaurantName, &deliveryAddr, &assignedAt)
 	if err == pgx.ErrNoRows {
 		return nil, nil // No active task
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get active task: %w", err)
 	}
-	return &task, nil
+	return &models.DeliveryTask{
+		OrderID:          orderID,
+		DeliveryPersonID: profile.ID,
+		Status:           status,
+		ETAMins:          25,
+		PickupPoint:      restaurantName,
+		DropPoint:        deliveryAddr,
+		AssignedAt:       assignedAt,
+	}, nil
+}
+
+// GetAvailableOrders lists ready orders with no delivery partner assigned yet
+// — the real job pool for delivery partners. Replaces the earlier side door
+// where the delivery role borrowed the unscoped vendor order list and
+// self-assigned through assign-delivery; this is scoped to exactly the set of
+// orders that actually need a partner. Mirrors GetActiveTask's design: orders
+// is the authoritative source, not the largely-unpopulated delivery_tasks table.
+func (r *DeliveryRepository) GetAvailableOrders(ctx context.Context) ([]models.DeliveryTask, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT id, COALESCE(restaurant_name,''), COALESCE(delivery_address,''), order_date
+		FROM orders
+		WHERE status = 'ready' AND delivery_person_id IS NULL
+		ORDER BY order_date ASC
+		LIMIT 50`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query available orders: %w", err)
+	}
+	defer rows.Close()
+
+	var tasks []models.DeliveryTask
+	for rows.Next() {
+		var orderID, pickup, drop string
+		var orderDate time.Time
+		if err := rows.Scan(&orderID, &pickup, &drop, &orderDate); err != nil {
+			return nil, fmt.Errorf("failed to scan available order: %w", err)
+		}
+		tasks = append(tasks, models.DeliveryTask{
+			OrderID:     orderID,
+			Status:      "available",
+			ETAMins:     25,
+			PickupPoint: pickup,
+			DropPoint:   drop,
+			AssignedAt:  orderDate,
+		})
+	}
+	return tasks, nil
+}
+
+// ClaimOrder atomically assigns an unclaimed, ready order to a delivery
+// partner. Returns claimed=false (no error) if another partner claimed it
+// first between the list call and this one, so the caller can show "already
+// taken" instead of a false success.
+func (r *DeliveryRepository) ClaimOrder(ctx context.Context, orderID, deliveryPersonID string) (bool, error) {
+	tag, err := r.db.Exec(ctx, `
+		UPDATE orders SET delivery_person_id = $1, last_updated_on = NOW()
+		WHERE id = $2 AND status = 'ready' AND delivery_person_id IS NULL`,
+		deliveryPersonID, orderID)
+	if err != nil {
+		return false, fmt.Errorf("failed to claim order: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return false, nil
+	}
+	_, _ = r.db.Exec(ctx, `
+		INSERT INTO delivery_trace_events (id, order_id, status, actor_type, notes)
+		VALUES ($1, $2, 'accepted', 'delivery_partner', 'Order claimed by delivery partner')`,
+		GetIdToRecord("DTRC"), orderID)
+	return true, nil
 }
 
 // GetTraceEvents gets delivery trace events for an order

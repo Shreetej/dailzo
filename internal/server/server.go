@@ -2,6 +2,7 @@ package server
 
 import (
 	"dailzo/internal/api"
+	ws "dailzo/internal/websocket"
 	"dailzo/repository"
 
 	"github.com/gofiber/fiber/v2"
@@ -9,13 +10,15 @@ import (
 
 // Server implements the api.ServerInterface
 type Server struct {
-	userRepo     *repository.UserRepository
-	orderRepo    *repository.OrderRepository
-	productRepo  *repository.FoodProductRepository
-	deliveryRepo *repository.DeliveryRepository
-	groceryRepo  *repository.GroceryRepository
-	adminRepo    *repository.AdminRepository
-	otpRepo      *repository.OTPRepository
+	userRepo           *repository.UserRepository
+	orderRepo          *repository.OrderRepository
+	productRepo        *repository.FoodProductRepository
+	deliveryRepo       *repository.DeliveryRepository
+	deliveryVendorRepo *repository.DeliveryVendorRepository
+	groceryRepo        *repository.GroceryRepository
+	adminRepo          *repository.AdminRepository
+	otpRepo            *repository.OTPRepository
+	hub                *ws.Hub
 }
 
 // NewServer creates a new server instance
@@ -24,18 +27,22 @@ func NewServer(
 	orderRepo *repository.OrderRepository,
 	productRepo *repository.FoodProductRepository,
 	deliveryRepo *repository.DeliveryRepository,
+	deliveryVendorRepo *repository.DeliveryVendorRepository,
 	groceryRepo *repository.GroceryRepository,
 	adminRepo *repository.AdminRepository,
 	otpRepo *repository.OTPRepository,
+	hub *ws.Hub,
 ) api.ServerInterface {
 	return &Server{
-		userRepo:     userRepo,
-		orderRepo:    orderRepo,
-		productRepo:  productRepo,
-		deliveryRepo: deliveryRepo,
-		groceryRepo:  groceryRepo,
-		adminRepo:    adminRepo,
-		otpRepo:      otpRepo,
+		userRepo:           userRepo,
+		orderRepo:          orderRepo,
+		productRepo:        productRepo,
+		deliveryRepo:       deliveryRepo,
+		deliveryVendorRepo: deliveryVendorRepo,
+		groceryRepo:        groceryRepo,
+		adminRepo:          adminRepo,
+		otpRepo:            otpRepo,
+		hub:                hub,
 	}
 }
 

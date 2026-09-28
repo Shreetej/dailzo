@@ -4,3 +4,8 @@ go.sum
 go.mod
 .env
 .DS_Store
+
+# graphify: generated knowledge-graph output (graph.json, report, AST/semantic
+# caches) — regenerable from source via /graphify --update, and the cache
+# grows large; not meant to be version-controlled.
+graphify-out/
