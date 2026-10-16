@@ -34,7 +34,7 @@ Three things made that possible, all fixed:
    | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` — reference the DB service, don't paste a literal |
    | `JWT_SECRET` | 32+ random characters: `openssl rand -base64 48` |
    | `APP_ENV` | `production` |
-   | `CORS_ORIGINS` | the app origins that may call this API |
+   | `CORS_ORIGINS` | `none` — the two Flutter apps send no `Origin` header, so CORS never applies to them; use real origins only when a browser frontend calls this API |
    | `SMTP_HOST` / `SMTP_PORT` / `SMTP_EMAIL` / `SMTP_PASSWORD` | as in `.env.example` |
 
    Do **not** set `PORT` — Railway injects it. Do not set the `DB_*` variables
@@ -102,6 +102,20 @@ docker run --rm -p 8080:8080 \
   -e JWT_SECRET="$(openssl rand -base64 48)" \
   dailzo-backend
 ```
+
+## Startup guards
+
+The app refuses to start, rather than running misconfigured, when:
+
+- `JWT_SECRET` is unset. Under 16 characters it starts but warns — a short
+  signing key is worth fixing before it signs anything you care about
+  (`openssl rand -base64 48`). Changing it invalidates every issued token.
+- `APP_ENV=production` and `CORS_ORIGINS` is unset or `*`. A wide-open origin
+  combined with `Authorization`-header requests is the combination worth
+  refusing. Set real origins, or `none` for a native-app-only API.
+
+Both are deliberate: a container that boots and quietly serves with a weak
+secret or an open CORS policy is worse than one that will not boot.
 
 ## Secrets
 

@@ -16,6 +16,7 @@ import (
 	"dailzo/repository"
 	"dailzo/routes"
 	"fmt"
+	"net/url"
 	"os"
 	"os/signal"
 	"strconv"
@@ -180,19 +181,42 @@ func main() {
 	// combined with credentialed (Authorization-header) requests is unsafe in
 	// production, so refuse to start rather than silently serve that
 	// combination — APP_ENV must be set explicitly to allow "*".
-	corsOrigins := cfg.CORSOrigins
-	if corsOrigins == "" {
-		corsOrigins = "*"
+	//
+	// "none" is the third answer, and the right one for this API today: its
+	// clients are the two Flutter apps, which send no Origin header at all,
+	// so CORS never applies to them and there is no real browser origin to
+	// name. Naming a fake one to satisfy the check would be worse than saying
+	// plainly that no browser may call this API cross-origin.
+	corsOrigins := strings.TrimSpace(cfg.CORSOrigins)
+	switch corsOrigins {
+	case "none":
+		log.Info().Msg("CORS_ORIGINS=none — no cross-origin browser access; native app clients are unaffected.")
+	case "", "*":
+		if cfg.AppEnv == "production" {
+			log.Fatal().Msg("CORS_ORIGINS is unset/\"*\" with APP_ENV=production — refusing to start with a wide-open CORS policy. Set CORS_ORIGINS to your real frontend origin(s), or to \"none\" if only native apps call this API.")
+		}
+		app.Use(cors.New(cors.Config{
+			AllowOrigins: "*",
+			AllowMethods: "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+			AllowHeaders: "Origin,Content-Type,Accept,Authorization",
+			MaxAge:       300,
+		}))
+	default:
+		// Fiber panics on a malformed origin, with a stack trace and no hint
+		// about which value was wrong. Check first and say so plainly.
+		if bad := invalidOrigins(corsOrigins); len(bad) > 0 {
+			log.Fatal().Msgf("CORS_ORIGINS contains %d value(s) that are not valid origins: %s. "+
+				"Each must be scheme://host[:port] with no trailing slash or path (e.g. https://app.example.com), "+
+				"or use \"none\" when only native apps call this API.",
+				len(bad), strings.Join(bad, ", "))
+		}
+		app.Use(cors.New(cors.Config{
+			AllowOrigins: corsOrigins,
+			AllowMethods: "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+			AllowHeaders: "Origin,Content-Type,Accept,Authorization",
+			MaxAge:       300,
+		}))
 	}
-	if cfg.AppEnv == "production" && corsOrigins == "*" {
-		log.Fatal().Msg("CORS_ORIGINS is unset/\"*\" with APP_ENV=production — refusing to start with a wide-open CORS policy. Set CORS_ORIGINS to your real frontend origin(s).")
-	}
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: corsOrigins,
-		AllowMethods: "GET,POST,PUT,PATCH,DELETE,OPTIONS",
-		AllowHeaders: "Origin,Content-Type,Accept,Authorization",
-		MaxAge:       300,
-	}))
 
 	// Rate limiting — throttles brute force / abuse. Generous global cap;
 	// skips health check and websocket upgrades. Cap is overridable via
@@ -542,6 +566,32 @@ func main() {
 	if err := app.Listen(":" + cfg.AppPort); err != nil {
 		log.Fatal().Err(err).Msg("Failed to start server")
 	}
+}
+
+// invalidOrigins returns the comma-separated entries of CORS_ORIGINS that
+// Fiber would reject.
+//
+// Fiber validates origins itself and panics when one is malformed —
+// "panic: [CORS] Invalid origin format in configuration: none" with a stack
+// trace, which says nothing about where the value came from or what a valid
+// one looks like. A misconfigured deployment deserves a sentence, not a
+// goroutine dump.
+func invalidOrigins(list string) []string {
+	var bad []string
+	for _, raw := range strings.Split(list, ",") {
+		origin := strings.TrimSpace(raw)
+		if origin == "" {
+			continue
+		}
+		u, err := url.Parse(origin)
+		// An origin is scheme + host only: no path, no trailing slash, no
+		// query. "example.com" and "https://example.com/" are both rejected
+		// by Fiber, so reject them here with an explanation.
+		if err != nil || u.Scheme == "" || u.Host == "" || u.Path != "" || u.RawQuery != "" {
+			bad = append(bad, origin)
+		}
+	}
+	return bad
 }
 
 // healthCheck serves both the root /health probe and its /api/v1 alias.
