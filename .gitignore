@@ -9,3 +9,5 @@ go.mod
 # caches) — regenerable from source via /graphify --update, and the cache
 # grows large; not meant to be version-controlled.
 graphify-out/
+# Database dumps: real data, including password hashes.
+*.dump.sql
