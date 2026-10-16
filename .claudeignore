@@ -1,0 +1,21 @@
+# Dependency locks & vendors (Massive token waste)
+package-lock.json
+Cargo.lock
+poetry.lock
+uv.lock
+go.sum
+vendor/
+
+# Build and cache artifacts
+target/
+dist/
+.next/
+__pycache__/
+*.exe
+*.test
+*.prof
+
+# Large Data & Local DBs
+*.csv
+*.jsonl
+*.sqlite

@@ -323,3 +323,15 @@ func (s *Server) PatchAuthFCMToken(c *fiber.Ctx) error {
 
 	return response.Success(c, fiber.Map{"message": "Device token saved"})
 }
+
+// PostAuthLogout handles POST /auth/logout.
+//
+// Authentication is stateless JWT with no server-side session or revocation
+// list, so the actual logout is the client discarding its token — which
+// AuthRepositoryImpl.logout already does. This endpoint exists because the app
+// calls it first and treats a transport error as a failed logout, which left
+// users unable to sign out against a server that answered 404. It confirms the
+// call and stays a single place to hook token revocation onto later.
+func (s *Server) PostAuthLogout(c *fiber.Ctx) error {
+	return response.SuccessWithMessage(c, "logged out", nil)
+}

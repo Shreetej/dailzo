@@ -1,11 +1,14 @@
 package server
 
 import (
+	"errors"
+	"time"
+
 	"dailzo/internal/api"
 	ws "dailzo/internal/websocket"
 	"dailzo/models"
 	"dailzo/pkg/response"
-	"time"
+	"dailzo/repository"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -71,7 +74,14 @@ func (s *Server) GetDeliveryProfile(c *fiber.Ctx) error {
 
 	profile, err := s.deliveryRepo.GetProfileByUserID(c.Context(), userID)
 	if err != nil {
-		return response.NotFound(c, "Delivery profile not found")
+		// Only a genuinely absent row is a 404. Reporting every error as
+		// "not found" hid a broken query (a selected column that didn't
+		// exist) behind a plausible-looking message for as long as it took
+		// someone to check the table by hand.
+		if errors.Is(err, repository.ErrDeliveryProfileNotFound) {
+			return response.NotFound(c, "Delivery profile not found")
+		}
+		return response.InternalError(c, "Failed to fetch delivery profile")
 	}
 
 	return response.Success(c, profile)
@@ -321,4 +331,43 @@ func (s *Server) GetDeliveryShifts(c *fiber.Ctx) error {
 	}
 
 	return response.Success(c, shifts)
+}
+
+// GetDeliveryVehicle handles GET /delivery/vehicle. The Partner app's delivery
+// profile screen has always called this; it had no server-side route until
+// now and failed with a 404 on every open.
+func (s *Server) GetDeliveryVehicle(c *fiber.Ctx) error {
+	userID := getUserIDFromContext(c)
+	if userID == "" {
+		return response.Unauthorized(c, "")
+	}
+
+	vehicle, err := s.deliveryRepo.GetVehicle(c.Context(), userID)
+	if err != nil {
+		if errors.Is(err, repository.ErrDeliveryProfileNotFound) {
+			return response.NotFound(c, "Delivery profile not found")
+		}
+		return response.InternalError(c, "Failed to fetch delivery profile")
+	}
+
+	return response.Success(c, vehicle)
+}
+
+// GetDeliveryDocuments handles GET /delivery/documents — the rider KYC
+// checklist, mirroring GET /grocery/documents.
+func (s *Server) GetDeliveryDocuments(c *fiber.Ctx) error {
+	userID := getUserIDFromContext(c)
+	if userID == "" {
+		return response.Unauthorized(c, "")
+	}
+
+	documents, err := s.deliveryRepo.GetDocuments(c.Context(), userID)
+	if err != nil {
+		if errors.Is(err, repository.ErrDeliveryProfileNotFound) {
+			return response.NotFound(c, "Delivery profile not found")
+		}
+		return response.InternalError(c, "Failed to fetch delivery profile")
+	}
+
+	return response.Success(c, documents)
 }

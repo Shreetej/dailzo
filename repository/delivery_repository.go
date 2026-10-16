@@ -11,6 +11,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// ErrDeliveryProfileNotFound means the rider genuinely has no profile row,
+// as opposed to the lookup itself failing. Handlers map only this to 404.
+var ErrDeliveryProfileNotFound = errors.New("delivery profile not found")
+
 // DeliveryRepository handles delivery partner data operations
 type DeliveryRepository struct {
 	db *pgxpool.Pool
@@ -46,11 +50,17 @@ func (r *DeliveryRepository) CreateProfile(ctx context.Context, profile *models.
 
 // GetProfileByUserID gets delivery profile by user ID
 func (r *DeliveryRepository) GetProfileByUserID(ctx context.Context, userID string) (*models.DeliveryProfile, error) {
+	// working_hours is NOT a delivery_profiles column — it only ever existed
+	// on grocery_profiles (migrations/001_new_tables.sql). Selecting it here
+	// made this query fail outright with "column working_hours does not
+	// exist", and because GetDeliveryProfile reports every error as 404, the
+	// rider's entire profile surface answered "Delivery profile not found"
+	// even with a perfectly good row in the table.
 	query := `
 		SELECT id, user_id, name, phone, city, vehicle_type, vehicle_number,
 			license_number, kyc_status, kyc_documents, rating, total_trips,
 			is_online, current_lat, current_lng, last_location_update,
-			working_hours, vendor_id, is_active, created_on, last_updated_on
+			vendor_id, is_active, created_on, last_updated_on
 		FROM delivery_profiles
 		WHERE user_id = $1`
 
@@ -60,12 +70,12 @@ func (r *DeliveryRepository) GetProfileByUserID(ctx context.Context, userID stri
 		&profile.VehicleType, &profile.VehicleNumber, &profile.LicenseNumber,
 		&profile.KYCStatus, &profile.KYCDocuments, &profile.Rating, &profile.TotalTrips,
 		&profile.IsOnline, &profile.CurrentLat, &profile.CurrentLng, &profile.LastLocationUpdate,
-		&profile.WorkingHours, &profile.VendorID, &profile.IsActive,
+		&profile.VendorID, &profile.IsActive,
 		&profile.CreatedOn, &profile.LastUpdatedOn,
 	)
 
 	if err == pgx.ErrNoRows {
-		return nil, errors.New("delivery profile not found")
+		return nil, ErrDeliveryProfileNotFound
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get delivery profile: %w", err)
@@ -79,7 +89,7 @@ func (r *DeliveryRepository) GetProfileByID(ctx context.Context, id string) (*mo
 		SELECT id, user_id, name, phone, city, vehicle_type, vehicle_number,
 			license_number, kyc_status, kyc_documents, rating, total_trips,
 			is_online, current_lat, current_lng, last_location_update,
-			working_hours, created_on, last_updated_on
+			created_on, last_updated_on
 		FROM delivery_profiles
 		WHERE id = $1`
 
@@ -89,11 +99,11 @@ func (r *DeliveryRepository) GetProfileByID(ctx context.Context, id string) (*mo
 		&profile.VehicleType, &profile.VehicleNumber, &profile.LicenseNumber,
 		&profile.KYCStatus, &profile.KYCDocuments, &profile.Rating, &profile.TotalTrips,
 		&profile.IsOnline, &profile.CurrentLat, &profile.CurrentLng, &profile.LastLocationUpdate,
-		&profile.WorkingHours, &profile.CreatedOn, &profile.LastUpdatedOn,
+		&profile.CreatedOn, &profile.LastUpdatedOn,
 	)
 
 	if err == pgx.ErrNoRows {
-		return nil, errors.New("delivery profile not found")
+		return nil, ErrDeliveryProfileNotFound
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get delivery profile: %w", err)
@@ -508,4 +518,63 @@ func (r *DeliveryRepository) CreateTraceEvent(ctx context.Context, event *models
 		return "", fmt.Errorf("failed to create trace event: %w", err)
 	}
 	return id, nil
+}
+
+// GetVehicle returns the rider's vehicle details for GET /delivery/vehicle,
+// derived from the delivery_profiles columns filled in at onboarding rather
+// than from a separate vehicle table (there isn't one).
+//
+// RC and insurance have no columns of their own yet, so their status tracks
+// the profile's overall KYC state: a rider whose KYC is verified has had those
+// documents checked, otherwise they count as submitted-but-unverified once a
+// vehicle number exists at all. This reports real onboarding state instead of
+// placeholder values — the same approach GroceryRepository.GetDocuments takes.
+func (r *DeliveryRepository) GetVehicle(ctx context.Context, userID string) (*models.DeliveryVehicle, error) {
+	profile, err := r.GetProfileByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	docStatus := "missing"
+	if profile.VehicleNumber != "" {
+		if profile.KYCStatus == "verified" {
+			docStatus = "verified"
+		} else {
+			docStatus = "uploaded"
+		}
+	}
+
+	return &models.DeliveryVehicle{
+		Type:            profile.VehicleType,
+		Number:          profile.VehicleNumber,
+		RCStatus:        docStatus,
+		InsuranceStatus: docStatus,
+	}, nil
+}
+
+// GetDocuments returns the rider's KYC checklist for GET /delivery/documents,
+// derived from the onboarding fields the same way grocery documents are: a
+// document counts as uploaded once its field was filled in, verified once the
+// profile's KYC passed, missing otherwise.
+func (r *DeliveryRepository) GetDocuments(ctx context.Context, userID string) ([]models.DeliveryDocument, error) {
+	profile, err := r.GetProfileByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	status := func(value string) string {
+		if value == "" {
+			return "missing"
+		}
+		if profile.KYCStatus == "verified" {
+			return "verified"
+		}
+		return "uploaded"
+	}
+
+	return []models.DeliveryDocument{
+		{Name: "Driving License", Status: status(profile.LicenseNumber)},
+		{Name: "Vehicle RC", Status: status(profile.VehicleNumber)},
+		{Name: "Identity Proof", Status: status(profile.Phone)},
+	}, nil
 }

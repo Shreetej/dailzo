@@ -380,9 +380,24 @@ func (r *FoodProductRepository) GetProductsWithFilters(ctx context.Context, cate
 	}
 
 	// Owner filter — scope to the authenticated vendor's own products.
+	//
+	// "Own" means the products of the businesses this account owns, not only
+	// the rows it personally inserted. created_by alone is set on a product
+	// the vendor created through the Partner app and on nothing else: a
+	// seeded or imported catalogue leaves it NULL, so a restaurant whose
+	// dishes customers were ordering saw an empty Menu screen. The customer
+	// catalogue has always matched on restaurant_id/outlet_id; this is the
+	// same rule, so both sides agree on whose product it is.
 	if ownerID != "" {
 		argCount++
-		query += fmt.Sprintf(" AND created_by = $%d", argCount)
+		query += fmt.Sprintf(` AND (
+			created_by = $%[1]d
+			OR restaurant_id IN (SELECT id FROM restaurants WHERE created_by = $%[1]d)
+			OR outlet_id IN (SELECT id FROM grocery_profiles WHERE user_id = $%[1]d)
+			OR outlet_id IN (SELECT o.id FROM vendor_outlets o
+			                 JOIN restaurants r ON r.id = o.restaurant_id
+			                 WHERE r.created_by = $%[1]d)
+		)`, argCount)
 		args = append(args, ownerID)
 	}
 

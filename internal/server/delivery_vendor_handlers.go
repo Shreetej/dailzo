@@ -215,3 +215,51 @@ func (s *Server) PostDeliveryVendorComplaintsUpdate(c *fiber.Ctx) error {
 
 	return response.Success(c, fiber.Map{"message": "Update logged"})
 }
+
+// GetDeliveryVendorKpis handles GET /delivery-vendor/kpis — the fleet
+// dashboard summary. The fleet previously had no dashboard at all: its only
+// screen was the rider review queue.
+func (s *Server) GetDeliveryVendorKpis(c *fiber.Ctx) error {
+	userID := getUserIDFromContext(c)
+	if userID == "" {
+		return response.Unauthorized(c, "")
+	}
+
+	kpis, err := s.deliveryVendorRepo.GetFleetKpis(c.Context(), userID)
+	if err != nil {
+		return response.InternalError(c, "Failed to fetch fleet KPIs")
+	}
+
+	return response.Success(c, kpis)
+}
+
+// GetDeliveryVendorPayoutSummary handles GET /delivery-vendor/payout-summary.
+func (s *Server) GetDeliveryVendorPayoutSummary(c *fiber.Ctx) error {
+	userID := getUserIDFromContext(c)
+	if userID == "" {
+		return response.Unauthorized(c, "")
+	}
+
+	summary, err := s.deliveryVendorRepo.GetFleetPayoutSummary(c.Context(), userID)
+	if err != nil {
+		return response.InternalError(c, "Failed to fetch payout summary")
+	}
+
+	return response.Success(c, summary)
+}
+
+// GetDeliveryVendorRiderEarnings handles GET /delivery-vendor/earnings — the
+// per-rider breakdown behind the fleet payout total.
+func (s *Server) GetDeliveryVendorRiderEarnings(c *fiber.Ctx) error {
+	userID := getUserIDFromContext(c)
+	if userID == "" {
+		return response.Unauthorized(c, "")
+	}
+
+	earnings, err := s.deliveryVendorRepo.GetFleetRiderEarnings(c.Context(), userID)
+	if err != nil {
+		return response.InternalError(c, "Failed to fetch rider earnings")
+	}
+
+	return response.Success(c, earnings)
+}

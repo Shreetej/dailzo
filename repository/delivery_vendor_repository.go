@@ -492,3 +492,168 @@ func (r *DeliveryVendorRepository) UpdateComplaintNotes(ctx context.Context, ven
 	}
 	return nil
 }
+
+// FleetKpi is the delivery vendor (fleet/agency) dashboard summary. Until now
+// the fleet had no dashboard at all — MyRidersScreen was its entire app — so
+// there was nothing aggregating its riders into a single operational view.
+//
+// Earnings use the same deliveryFeePerTrip basis as the per-rider analytics in
+// delivery_analytics_repository.go, so a fleet total always reconciles against
+// the sum of its riders' own earnings screens.
+type FleetKpi struct {
+	TotalRiders     int     `json:"total_riders"`
+	ActiveRiders    int     `json:"active_riders"`
+	PendingRiders   int     `json:"pending_riders"`
+	SuspendedRiders int     `json:"suspended_riders"`
+	OnlineRiders    int     `json:"online_riders"`
+	TripsToday      int     `json:"trips_today"`
+	TripsTotal      int     `json:"trips_total"`
+	EarningsToday   float64 `json:"earnings_today"`
+	OpenComplaints  int     `json:"open_complaints"`
+}
+
+// GetFleetKpis aggregates one fleet's riders into its dashboard figures.
+// Everything is scoped through delivery_vendor_profiles.user_id, the same
+// ownership path queryRidersByCondition uses, so one fleet can never read
+// another's numbers.
+func (r *DeliveryVendorRepository) GetFleetKpis(ctx context.Context, vendorUserID string) (FleetKpi, error) {
+	var kpi FleetKpi
+
+	// Rider counts mirror the three rider lists exactly (pending = awaiting
+	// first review, suspended = deactivated after approval), so the dashboard
+	// tiles and the MyRiders tabs can never disagree.
+	err := r.db.QueryRow(ctx, `
+		SELECT
+		  count(*),
+		  count(*) FILTER (WHERE dp.is_active = true),
+		  count(*) FILTER (WHERE dp.is_active = false AND dp.kyc_status = 'pending'),
+		  count(*) FILTER (WHERE dp.is_active = false AND dp.kyc_status <> 'pending'),
+		  count(*) FILTER (WHERE dp.is_online = true)
+		FROM delivery_profiles dp
+		JOIN delivery_vendor_profiles dv ON dp.vendor_id = dv.id
+		WHERE dv.user_id = $1`, vendorUserID).Scan(
+		&kpi.TotalRiders, &kpi.ActiveRiders, &kpi.PendingRiders,
+		&kpi.SuspendedRiders, &kpi.OnlineRiders,
+	)
+	if err != nil {
+		return FleetKpi{}, fmt.Errorf("failed to aggregate fleet riders: %w", err)
+	}
+
+	// orders.delivery_person_id references users(id), not delivery_profiles(id)
+	// — see the FK note on AssignDeliveryPerson — so the join goes through
+	// dp.user_id.
+	err = r.db.QueryRow(ctx, `
+		SELECT
+		  count(*) FILTER (WHERE o.order_date::date = current_date),
+		  count(*)
+		FROM orders o
+		JOIN delivery_profiles dp ON dp.user_id = o.delivery_person_id
+		JOIN delivery_vendor_profiles dv ON dp.vendor_id = dv.id
+		WHERE dv.user_id = $1 AND lower(o.status) = 'delivered'`, vendorUserID).Scan(
+		&kpi.TripsToday, &kpi.TripsTotal,
+	)
+	if err != nil {
+		return FleetKpi{}, fmt.Errorf("failed to aggregate fleet trips: %w", err)
+	}
+	kpi.EarningsToday = float64(kpi.TripsToday) * deliveryFeePerTrip
+
+	// Best-effort: an unreadable complaint count shouldn't fail the whole
+	// dashboard, which is mostly rider operations.
+	_ = r.db.QueryRow(ctx, `
+		SELECT count(*)
+		FROM complaints c
+		JOIN orders o ON c.order_id = o.id
+		JOIN delivery_profiles dp ON dp.user_id = o.delivery_person_id
+		JOIN delivery_vendor_profiles dv ON dp.vendor_id = dv.id
+		WHERE dv.user_id = $1 AND c.status IN ('open', 'investigating')`,
+		vendorUserID).Scan(&kpi.OpenComplaints)
+
+	return kpi, nil
+}
+
+// GetFleetPayoutSummary totals what the platform owes this fleet, on the same
+// delivered-trips × fee basis as DeliveryAnalyticsRepository.PayoutSummary and
+// reading the same reconciliation_config cadence, so the fleet's payout date
+// matches the one its riders see.
+func (r *DeliveryVendorRepository) GetFleetPayoutSummary(ctx context.Context, vendorUserID string) (PayoutSummary, error) {
+	var trips int
+	if err := r.db.QueryRow(ctx, `
+		SELECT count(*)
+		FROM orders o
+		JOIN delivery_profiles dp ON dp.user_id = o.delivery_person_id
+		JOIN delivery_vendor_profiles dv ON dp.vendor_id = dv.id
+		WHERE dv.user_id = $1 AND lower(o.status) = 'delivered'`,
+		vendorUserID).Scan(&trips); err != nil {
+		return PayoutSummary{}, fmt.Errorf("failed to total fleet payout: %w", err)
+	}
+
+	amount := float64(trips) * deliveryFeePerTrip
+
+	var cadence string
+	var nextRun *time.Time
+	_ = r.db.QueryRow(ctx, `SELECT cadence, next_run_on FROM reconciliation_config LIMIT 1`).Scan(&cadence, &nextRun)
+
+	var date time.Time
+	switch {
+	case nextRun != nil:
+		date = *nextRun
+	case cadence == "weekly":
+		date = time.Now().AddDate(0, 0, 7)
+	case cadence == "monthly":
+		date = time.Now().AddDate(0, 1, 0)
+	default:
+		date = time.Now().AddDate(0, 0, 1)
+	}
+
+	status := "pending"
+	if amount > 0 {
+		status = "scheduled"
+	}
+
+	return PayoutSummary{
+		NextPayoutDate: date.Format("2006-01-02"),
+		Amount:         amount,
+		Status:         status,
+	}, nil
+}
+
+// FleetRiderEarning is one rider's contribution to the fleet total, for the
+// fleet earnings breakdown.
+type FleetRiderEarning struct {
+	RiderID  string  `json:"rider_id"`
+	Name     string  `json:"name"`
+	Trips    int     `json:"trips"`
+	Earnings float64 `json:"earnings"`
+	IsOnline bool    `json:"is_online"`
+	IsActive bool    `json:"is_active"`
+}
+
+// GetFleetRiderEarnings breaks the fleet payout down per rider, so a fleet can
+// see who is actually earning rather than only a single total.
+func (r *DeliveryVendorRepository) GetFleetRiderEarnings(ctx context.Context, vendorUserID string) ([]FleetRiderEarning, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT dp.id, dp.name, dp.is_online, dp.is_active,
+		       count(o.id) FILTER (WHERE lower(o.status) = 'delivered') AS trips
+		FROM delivery_profiles dp
+		JOIN delivery_vendor_profiles dv ON dp.vendor_id = dv.id
+		LEFT JOIN orders o ON o.delivery_person_id = dp.user_id
+		WHERE dv.user_id = $1
+		GROUP BY dp.id, dp.name, dp.is_online, dp.is_active
+		ORDER BY trips DESC, dp.name ASC`, vendorUserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query fleet rider earnings: %w", err)
+	}
+	defer rows.Close()
+
+	earnings := []FleetRiderEarning{}
+	for rows.Next() {
+		var e FleetRiderEarning
+		if err := rows.Scan(&e.RiderID, &e.Name, &e.IsOnline, &e.IsActive, &e.Trips); err != nil {
+			return nil, fmt.Errorf("failed to scan fleet rider earning: %w", err)
+		}
+		e.Earnings = float64(e.Trips) * deliveryFeePerTrip
+		earnings = append(earnings, e)
+	}
+
+	return earnings, rows.Err()
+}

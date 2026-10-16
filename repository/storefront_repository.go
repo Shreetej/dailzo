@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -20,10 +21,14 @@ import (
 // aligns directly with the Flutter models.
 type StorefrontRepository struct {
 	db *pgxpool.Pool
+	// Fees and VAT are a server-side policy, not client input — see
+	// BillingRepository.QuoteCart, which both the quote endpoint and Checkout
+	// price through.
+	billing *BillingRepository
 }
 
 func NewStorefrontRepository(db *pgxpool.Pool) *StorefrontRepository {
-	return &StorefrontRepository{db: db}
+	return &StorefrontRepository{db: db, billing: NewBillingRepository(db)}
 }
 
 func collectMaps(rows pgx.Rows) ([]map[string]any, error) {
@@ -111,8 +116,13 @@ func (r *StorefrontRepository) GetRestaurants(ctx context.Context) ([]map[string
 	// createOperationalProfile) — this query previously had no filter at
 	// all, so an unapproved restaurant was visible to every customer the
 	// moment its owner submitted registration.
+	// rating/total_ratings are returned so the apps can show the real score.
+	// They were absent, which is why the customer app fell back to a
+	// hardcoded "4.2 (100)" on every restaurant card.
 	rows, err := r.db.Query(ctx, `
-		SELECT id, name, image_path, cuisines, delivery_time, location, address
+		SELECT id, name, image_path, cuisines, delivery_time, location, address,
+		       COALESCE(rating, 0)::float8 AS rating,
+		       COALESCE(total_ratings, 0)  AS total_ratings
 		FROM restaurants
 		WHERE is_active = true
 		ORDER BY name`)
@@ -126,14 +136,31 @@ func (r *StorefrontRepository) GetRestaurants(ctx context.Context) ([]map[string
 
 // GetCart returns cart lines joined to product/variant details.
 func (r *StorefrontRepository) GetCart(ctx context.Context, userID, cartType string) ([]map[string]any, error) {
+	// The selected options come back both as raw ids (so the client can
+	// re-open the line for editing) and as a priced, ordered label list, so a
+	// restored cart shows "Large, Extra cheese" without a second round trip.
 	rows, err := r.db.Query(ctx, `
 		SELECT ci.id, ci.cart_type, ci.product_id, ci.variant_id, ci.quantity,
 		       fp.name, fp.image_url, fp.price::float8 AS price,
 		       fp.promo_price::float8 AS promo_price, fp.is_promo, fp.unit, fp.brand,
-		       pv.variant_name, pv.price::float8 AS variant_price
+		       pv.variant_name, pv.price::float8 AS variant_price,
+		       ci.selected_option_ids,
+		       COALESCE(opt.options, '[]'::jsonb) AS selected_options,
+		       COALESCE(opt.delta, 0)::float8     AS options_delta
 		FROM cart_items ci
 		JOIN food_products fp ON fp.id = ci.product_id
 		LEFT JOIN product_variants pv ON pv.id = ci.variant_id
+		LEFT JOIN LATERAL (
+		    SELECT jsonb_agg(jsonb_build_object(
+		               'id', po.id, 'label', po.label,
+		               'price_delta', po.price_delta::float8,
+		               'group', g.name) ORDER BY g.sort_order, po.sort_order) AS options,
+		           sum(po.price_delta) AS delta
+		    FROM product_options po
+		    JOIN product_option_groups g ON g.id = po.group_id
+		    WHERE po.id IN (SELECT jsonb_array_elements_text(ci.selected_option_ids))
+		      AND g.product_id = ci.product_id
+		) opt ON TRUE
 		WHERE ci.user_id = $1 AND ci.cart_type = $2
 		ORDER BY ci.added_on`, userID, cartType)
 	if err != nil {
@@ -142,9 +169,15 @@ func (r *StorefrontRepository) GetCart(ctx context.Context, userID, cartType str
 	return collectMaps(rows)
 }
 
-// AddCartItem upserts a line: if the same (user,type,product,variant) exists,
-// its quantity is incremented by qty.
-func (r *StorefrontRepository) AddCartItem(ctx context.Context, userID, cartType, productID, variantID string, qty int) (string, error) {
+// AddCartItem upserts a line. Two lines for the same product with different
+// option selections are different lines, so the selection participates in the
+// conflict key alongside (user, type, product, variant).
+func (r *StorefrontRepository) AddCartItem(
+	ctx context.Context,
+	userID, cartType, productID, variantID string,
+	qty int,
+	selectedOptionIDs []string,
+) (string, error) {
 	if qty <= 0 {
 		qty = 1
 	}
@@ -153,14 +186,45 @@ func (r *StorefrontRepository) AddCartItem(ctx context.Context, userID, cartType
 	if variantID != "" {
 		variant = variantID
 	}
-	_, err := r.db.Exec(ctx, `
-		INSERT INTO cart_items (id, user_id, cart_type, product_id, variant_id, quantity, added_on, last_updated_on)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
-		ON CONFLICT (user_id, cart_type, product_id, COALESCE(variant_id, ''))
+
+	// Sorted + de-duplicated so the same choices always hash identically —
+	// otherwise picking "cheese, gravy" and "gravy, cheese" would create two
+	// separate lines for the same thing.
+	optionsJSON, err := canonicalOptionIDsJSON(selectedOptionIDs)
+	if err != nil {
+		return "", err
+	}
+
+	_, err = r.db.Exec(ctx, `
+		INSERT INTO cart_items (id, user_id, cart_type, product_id, variant_id, quantity, selected_option_ids, added_on, last_updated_on)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
+		ON CONFLICT (user_id, cart_type, product_id, COALESCE(variant_id, ''::bpchar), md5(selected_option_ids::text))
 		DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity,
 		              last_updated_on = EXCLUDED.last_updated_on`,
-		id, userID, cartType, productID, variant, qty, time.Now())
+		id, userID, cartType, productID, variant, qty, optionsJSON, time.Now())
 	return id, err
+}
+
+// canonicalOptionIDsJSON normalises a selection into the JSONB array stored on
+// the cart line: trimmed, de-duplicated and sorted.
+func canonicalOptionIDsJSON(ids []string) (string, error) {
+	seen := map[string]bool{}
+	clean := make([]string, 0, len(ids))
+	for _, raw := range ids {
+		v := strings.TrimSpace(raw)
+		if v == "" || seen[v] {
+			continue
+		}
+		seen[v] = true
+		clean = append(clean, v)
+	}
+	sort.Strings(clean)
+
+	encoded, err := json.Marshal(clean)
+	if err != nil {
+		return "", fmt.Errorf("failed to encode option selection: %w", err)
+	}
+	return string(encoded), nil
 }
 
 // SetCartItemQty sets an absolute quantity; qty<=0 deletes the line.
@@ -194,6 +258,17 @@ func (r *StorefrontRepository) Checkout(ctx context.Context, userID string, meta
 	if cartType == "" {
 		cartType = "food"
 	}
+	// The apps present ONE cart ("Mix Food & Grocery in one order — one cart,
+	// one delivery"), so an order can span both types. "mixed" takes every
+	// line the user has; "food"/"grocery" keep the single-type behaviour for
+	// any caller that still asks for it.
+	mixed := cartType == "mixed" || cartType == "all"
+	typeFilter := " AND ci.cart_type = $2"
+	queryArgs := []any{userID, cartType}
+	if mixed {
+		typeFilter = ""
+		queryArgs = []any{userID}
+	}
 
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -201,15 +276,39 @@ func (r *StorefrontRepository) Checkout(ctx context.Context, userID string, meta
 	}
 	defer tx.Rollback(ctx)
 
+	// fp.outlet_id / fp.restaurant_id come along so the order can record WHICH
+	// vendor it belongs to. Grocery carts in particular never carried that:
+	// the client only ever sends restaurant_name, groceries have no
+	// restaurant row at all, and outlet_id was never written — so a grocery
+	// order landed attributable to nobody and no grocery vendor could list
+	// their own orders.
 	rows, err := tx.Query(ctx, `
 		SELECT ci.product_id, ci.variant_id, ci.quantity,
 		       fp.name, fp.image_url, fp.price::float8 AS price,
 		       fp.promo_price::float8 AS promo_price, fp.is_promo,
-		       pv.variant_name, pv.price::float8 AS variant_price
+		       fp.outlet_id, fp.restaurant_id,
+		       pv.variant_name, pv.price::float8 AS variant_price,
+		       COALESCE(opt.labels, '[]'::jsonb) AS option_labels,
+		       COALESCE(opt.delta, 0)::float8    AS options_delta
 		FROM cart_items ci
 		JOIN food_products fp ON fp.id = ci.product_id
 		LEFT JOIN product_variants pv ON pv.id = ci.variant_id
-		WHERE ci.user_id = $1 AND ci.cart_type = $2`, userID, cartType)
+		-- Price the customer's choices HERE, from product_options, rather than
+		-- trusting anything the client sends. The uplift was previously lost
+		-- entirely, so a customised line was billed at its base price.
+		LEFT JOIN LATERAL (
+		    SELECT jsonb_agg(jsonb_build_object(
+		               'id', po.id, 'label', po.label,
+		               'price_delta', po.price_delta::float8,
+		               'group', g.name) ORDER BY g.sort_order, po.sort_order) AS labels,
+		           sum(po.price_delta) AS delta
+		    FROM product_options po
+		    JOIN product_option_groups g ON g.id = po.group_id
+		    WHERE po.id IN (SELECT jsonb_array_elements_text(ci.selected_option_ids))
+		      AND g.product_id = ci.product_id
+		      AND po.is_active AND g.is_active
+		) opt ON TRUE
+		WHERE ci.user_id = $1`+typeFilter, queryArgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -223,9 +322,22 @@ func (r *StorefrontRepository) Checkout(ctx context.Context, userID string, meta
 
 	items := make([]map[string]any, 0, len(cart))
 	var subtotal float64
+	// Pre-discount total, for the savings line on the bill.
+	var mrpTotal float64
 	restaurantName := strVal(meta["restaurant_name"])
 	var firstImage string
+	// The vendor this cart belongs to, taken from the products themselves
+	// rather than trusted from the client. A cart is single-vendor by
+	// construction (the apps clear it when switching store), so the first
+	// non-empty value wins.
+	var cartOutletID, cartRestaurantID string
 	for _, line := range cart {
+		if cartOutletID == "" {
+			cartOutletID, _ = line["outlet_id"].(string)
+		}
+		if cartRestaurantID == "" {
+			cartRestaurantID, _ = line["restaurant_id"].(string)
+		}
 		qty := toInt(line["quantity"])
 		price := toFloat(line["price"])
 		if line["variant_price"] != nil {
@@ -233,28 +345,81 @@ func (r *StorefrontRepository) Checkout(ctx context.Context, userID string, meta
 		} else if b, ok := line["is_promo"].(bool); ok && b && line["promo_price"] != nil {
 			price = toFloat(line["promo_price"])
 		}
+		// The chosen options are an uplift on whichever base price applies,
+		// priced from product_options above. Without this the order recorded
+		// the base price while the payment captured the customised one.
+		optionsDelta := toFloat(line["options_delta"])
+		price += optionsDelta
+
+		// List price before any promo, with the same option uplift applied,
+		// so savings compares like with like.
+		mrp := toFloat(line["price"]) + optionsDelta
+		if mrp < price {
+			mrp = price
+		}
+		mrpTotal += mrp * float64(qty)
+
 		subtotal += price * float64(qty)
 		if firstImage == "" {
 			firstImage, _ = line["image_url"].(string)
 		}
-		items = append(items, map[string]any{
+
+		item := map[string]any{
 			"product_id": line["product_id"],
 			"name":       line["name"],
 			"price":      price,
 			"quantity":   qty,
 			"variant":    line["variant_name"],
 			"image_url":  line["image_url"],
-		})
+			// Which vendor owes this line. A mixed food+grocery order spans
+			// two vendors by design, and the order row has room for only one
+			// (restaurant_id / outlet_id); without per-line attribution the
+			// grocery half of such an order was invisible to the grocery
+			// store, while the restaurant saw groceries it had not sold.
+			// Trimmed: some id columns are bpchar, so a padded value would
+			// never compare equal to the vendor's own id.
+			"outlet_id":     strings.TrimSpace(strVal(line["outlet_id"])),
+			"restaurant_id": strings.TrimSpace(strVal(line["restaurant_id"])),
+		}
+		// Carry the selection onto the order so the vendor knows what to make
+		// and the line can be explained back to the customer.
+		if labels, ok := line["option_labels"]; ok && labels != nil {
+			item["options"] = labels
+			item["options_delta"] = optionsDelta
+		}
+		items = append(items, item)
 	}
 	itemsJSON, _ := json.Marshal(items)
 
-	deliveryFee := toFloat(meta["delivery_fee"])
-	tax := toFloat(meta["tax_amount"])
+	// Fees and VAT are priced from the server's billing policy for this
+	// market, NOT from the request body. The client used to send
+	// delivery_fee and tax_amount — constants compiled into the app — and
+	// this function accepted them, so the amount charged was whatever the
+	// device claimed and could only be changed by shipping a new build.
+	//
+	// Only the tip is taken from the client: it is the customer's own choice,
+	// and it is excluded from VAT below.
 	tip := toFloat(meta["tip"])
-	total := subtotal + deliveryFee + tax + tip
+	regionCode, _ := meta["region_code"].(string)
+	billingCfg, err := r.billing.GetBillingConfig(ctx, regionCode)
+	if err != nil {
+		return nil, fmt.Errorf("failed to price order: %w", err)
+	}
+	quote := r.billing.QuoteCart(ctx, billingCfg, subtotal, mrpTotal,
+		toFloat(meta["discount"]), tip, len(items))
+
+	deliveryFee := quote.DeliveryFee + quote.HandlingFee + quote.SmallOrderFee
+	tax := quote.Tax
+	total := quote.Total
+	subtotal = quote.Subtotal
 
 	orderID := GetIdToRecord("ORDR")
 	restaurantID, _ := meta["restaurant_id"].(string)
+	// Fall back to the vendor derived from the cart's own products when the
+	// client didn't name one — which is always, for grocery.
+	if restaurantID == "" {
+		restaurantID = cartRestaurantID
+	}
 	now := time.Now()
 	// Server-generated OTPs so they are stable and authoritative. delivery_otp
 	// is the customer→partner handoff; pickup_otp is the restaurant→partner one.
@@ -274,16 +439,16 @@ func (r *StorefrontRepository) Checkout(ctx context.Context, userID string, meta
 	estimatedDeliveryTime := now.Add(time.Duration(etaMinutes) * time.Minute)
 
 	_, err = tx.Exec(ctx, `
-		INSERT INTO orders (id, user_id, restaurant_id, status, delivery_status, total_amount,
+		INSERT INTO orders (id, user_id, restaurant_id, outlet_id, status, delivery_status, total_amount,
 		                    order_date, cart_type, items, customer_name, restaurant_name,
 		                    delivery_address, payment_method, tip, subtotal, delivery_fee,
 		                    tax_amount, image_path, delivery_otp, pickup_otp, estimated_delivery_time,
 		                    created_on, last_updated_on)
-		VALUES ($1,$2,$3,'pending','preparing',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$5,$5)`,
+		VALUES ($1,$2,$3,$20,'pending','preparing',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$5,$5)`,
 		orderID, userID, nullIfEmpty(restaurantID), total, now, cartType, string(itemsJSON),
 		strVal(meta["customer_name"]), restaurantName, strVal(meta["delivery_address"]),
 		strVal(meta["payment_method"]), tip, subtotal, deliveryFee, tax, firstImage, deliveryOTP, pickupOTP,
-		estimatedDeliveryTime)
+		estimatedDeliveryTime, nullIfEmpty(cartOutletID))
 	if err != nil {
 		return nil, err
 	}
@@ -297,8 +462,14 @@ func (r *StorefrontRepository) Checkout(ctx context.Context, userID string, meta
 			 WHERE id = $1 AND stock_quantity IS NOT NULL`, pid, qty)
 	}
 
-	if _, err = tx.Exec(ctx,
-		`DELETE FROM cart_items WHERE user_id = $1 AND cart_type = $2`, userID, cartType); err != nil {
+	// Clear exactly what was just ordered — both types for a mixed order.
+	if mixed {
+		_, err = tx.Exec(ctx, `DELETE FROM cart_items WHERE user_id = $1`, userID)
+	} else {
+		_, err = tx.Exec(ctx,
+			`DELETE FROM cart_items WHERE user_id = $1 AND cart_type = $2`, userID, cartType)
+	}
+	if err != nil {
 		return nil, err
 	}
 
@@ -343,14 +514,129 @@ func (r *StorefrontRepository) GetMyOrders(ctx context.Context, userID string) (
 // server-side mapping from the authenticated user to the outlet(s) they own,
 // so this filters what the client asks for rather than enforcing ownership.
 // Closing that trust gap needs a real user->restaurant/outlet ownership table.
-func (r *StorefrontRepository) GetAllOrders(ctx context.Context, status, outletID string) ([]map[string]any, error) {
-	query := `
+// orderSelectColumns is shared by the vendor-scoped and unscoped order reads
+// so both return identical row shapes to the apps.
+const orderSelectColumns = `
 		SELECT id, user_id, restaurant_id, restaurant_name, status, delivery_status,
 		       total_amount::float8 AS total_amount, subtotal::float8 AS subtotal,
 		       delivery_fee::float8 AS delivery_fee, tax_amount::float8 AS tax_amount,
 		       tip::float8 AS tip, order_date, cart_type, items, customer_name,
-		       delivery_address, payment_method, image_path, delivery_otp
-		FROM orders`
+		       delivery_address, payment_method, image_path, delivery_otp`
+
+// GetVendorOrders lists orders belonging to one vendor. scope is the caller's
+// own businesses/outlets and is always applied; outletID, when given, narrows
+// further within that scope (the controller has already checked it is one of
+// the caller's). A vendor who owns nothing gets an empty list, never the
+// unfiltered table.
+func (r *StorefrontRepository) GetVendorOrders(
+	ctx context.Context,
+	status, outletID string,
+	scope VendorScope,
+) ([]map[string]any, error) {
+	if scope.IsEmpty() {
+		return []map[string]any{}, nil
+	}
+
+	// Match the caller's full id set against BOTH columns — see
+	// VendorScope.AllIDs: a grocery store's id is a "business" id but is
+	// written to orders.outlet_id, so pairing each set with one column hid
+	// every grocery order from its own store.
+	// The order's own columns name at most one vendor, so a mixed order would
+	// otherwise reach only whichever vendor happened to be first in the cart.
+	// The items snapshot carries each line's vendor, so match that as well.
+	query := orderSelectColumns + ` FROM orders o`
+	conditions := []string{`(
+		o.restaurant_id = ANY($1) OR o.outlet_id = ANY($1)
+		OR EXISTS (
+		    SELECT 1 FROM jsonb_array_elements(COALESCE(o.items, '[]'::jsonb)) line
+		    WHERE line->>'outlet_id' = ANY($1) OR line->>'restaurant_id' = ANY($1)
+		)
+	)`}
+	args := []any{scope.AllIDs()}
+
+	if status != "" {
+		args = append(args, status)
+		conditions = append(conditions, fmt.Sprintf("status = $%d", len(args)))
+	}
+	if outletID != "" {
+		// An outlet belongs to a business, and orders are attributed to
+		// whichever of the two the product named — a restaurant's dishes carry
+		// its restaurant_id, not the id of the outlet that cooks them. Narrow
+		// to the outlet AND its parent business, or asking for "this outlet's
+		// orders" returned nothing for every restaurant vendor.
+		args = append(args, outletID)
+		conditions = append(conditions, fmt.Sprintf(`(
+			o.restaurant_id = $%[1]d OR o.outlet_id = $%[1]d
+			OR o.restaurant_id = (SELECT restaurant_id FROM vendor_outlets WHERE id = $%[1]d)
+			OR EXISTS (
+			    SELECT 1 FROM jsonb_array_elements(COALESCE(o.items, '[]'::jsonb)) line
+			    WHERE line->>'outlet_id' = $%[1]d
+			       OR line->>'restaurant_id' = $%[1]d
+			       OR line->>'restaurant_id' = (SELECT restaurant_id FROM vendor_outlets WHERE id = $%[1]d)
+			)
+		)`, len(args)))
+	}
+
+	query += " WHERE " + strings.Join(conditions, " AND ")
+	query += ` ORDER BY o.order_date DESC NULLS LAST LIMIT 200`
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	orders, err := collectMaps(rows)
+	if err != nil {
+		return nil, err
+	}
+	for _, order := range orders {
+		restrictItemsToScope(order, scope)
+	}
+	return orders, nil
+}
+
+// restrictItemsToScope trims a mixed order's items down to the lines the
+// caller actually sells, in place.
+//
+// One order can now span two vendors, and both of them list it. Neither should
+// read the other's lines, and a kitchen shown someone else's groceries would
+// try to prepare them.
+//
+// Lines without vendor attribution (orders placed before it was recorded) are
+// kept as they are: there is nothing to decide with, and dropping them would
+// empty historical orders.
+func restrictItemsToScope(order map[string]any, scope VendorScope) {
+	lines, ok := order["items"].([]any)
+	if !ok || len(lines) == 0 {
+		return
+	}
+
+	attributed := false
+	mine := make([]any, 0, len(lines))
+	for _, raw := range lines {
+		line, ok := raw.(map[string]any)
+		if !ok {
+			mine = append(mine, raw)
+			continue
+		}
+		outletID := strings.TrimSpace(strVal(line["outlet_id"]))
+		restaurantID := strings.TrimSpace(strVal(line["restaurant_id"]))
+		if outletID == "" && restaurantID == "" {
+			mine = append(mine, raw)
+			continue
+		}
+		attributed = true
+		if scope.Owns(outletID) || scope.Owns(restaurantID) {
+			mine = append(mine, raw)
+		}
+	}
+	if attributed {
+		order["items"] = mine
+	}
+}
+
+// GetAllOrders is the unscoped read, kept for admin/platform callers.
+func (r *StorefrontRepository) GetAllOrders(ctx context.Context, status, outletID string) ([]map[string]any, error) {
+	query := orderSelectColumns + ` FROM orders`
 	conditions := []string{}
 	args := []any{}
 	if status != "" {
@@ -569,4 +855,163 @@ func defaultStr(s, def string) string {
 		return def
 	}
 	return s
+}
+
+// ─── Product options (customisation) ─────────────────────────────────────────
+
+// GetProductOptionGroups returns one product's customisation groups, each with
+// its selectable options, ordered for display.
+//
+// This replaces the const option lists that were hardcoded in the customer
+// app's customisation screen: those were keyed off tag strings, applied the
+// same "Portion / Spice level / Add-ons" to every dish, carried invented
+// prices, and — because nothing server-side modelled them — could never be
+// priced or fulfilled.
+func (r *StorefrontRepository) GetProductOptionGroups(ctx context.Context, productID string) ([]map[string]any, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT g.id, g.name, g.selection, g.is_required, g.sort_order,
+		       COALESCE(jsonb_agg(jsonb_build_object(
+		           'id', o.id,
+		           'label', o.label,
+		           'price_delta', o.price_delta::float8
+		       ) ORDER BY o.sort_order, o.label)
+		       FILTER (WHERE o.id IS NOT NULL), '[]'::jsonb) AS options
+		FROM product_option_groups g
+		LEFT JOIN product_options o ON o.group_id = g.id AND o.is_active
+		WHERE g.product_id = $1 AND g.is_active
+		GROUP BY g.id, g.name, g.selection, g.is_required, g.sort_order
+		ORDER BY g.sort_order, g.name`, productID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query product options: %w", err)
+	}
+	return collectMaps(rows)
+}
+
+// QuoteCart prices the user's current cart under their market's policy.
+//
+// The customer app renders this verbatim: subtotal, fees, VAT and total all
+// come from here, so the bill shown before checkout and the amount recorded on
+// the order are produced by the same code. Previously the app computed the
+// bill from constants it carried and sent the result along to be trusted.
+func (r *StorefrontRepository) QuoteCart(
+	ctx context.Context,
+	userID, cartType, regionCode string,
+	tip, discount float64,
+) (CartQuote, error) {
+	cfg, err := r.billing.GetBillingConfig(ctx, regionCode)
+	if err != nil {
+		return CartQuote{}, err
+	}
+
+	lines, err := r.GetCart(ctx, userID, cartType)
+	if err != nil {
+		return CartQuote{}, err
+	}
+
+	var subtotal, mrpTotal float64
+	itemCount := 0
+	for _, line := range lines {
+		qty := toInt(line["quantity"])
+		if qty <= 0 {
+			continue
+		}
+
+		price := toFloat(line["price"])
+		if line["variant_price"] != nil {
+			price = toFloat(line["variant_price"])
+		} else if b, ok := line["is_promo"].(bool); ok && b && line["promo_price"] != nil {
+			price = toFloat(line["promo_price"])
+		}
+		optionsDelta := toFloat(line["options_delta"])
+		price += optionsDelta
+
+		mrp := toFloat(line["price"]) + optionsDelta
+		if mrp < price {
+			mrp = price
+		}
+
+		subtotal += price * float64(qty)
+		mrpTotal += mrp * float64(qty)
+		itemCount += qty
+	}
+
+	return r.billing.QuoteCart(ctx, cfg, subtotal, mrpTotal, discount, tip, itemCount), nil
+}
+
+// QuoteLine is one cart line as the client currently shows it.
+type QuoteLine struct {
+	ProductID         string   `json:"product_id"`
+	Quantity          int      `json:"quantity"`
+	SelectedOptionIDs []string `json:"selected_option_ids"`
+}
+
+// QuoteLines prices the lines the client is displaying.
+//
+// The quote originally priced the SERVER cart, which meant that whenever the
+// local cart and the server cart drifted apart — an unauthenticated session, a
+// failed sync, a reorder — the customer saw their items listed above a bill of
+// zero. Pricing what is on screen removes that whole class of mismatch.
+//
+// The client only says WHICH products and how many; every price still comes
+// from the database here (base/promo price, option deltas), and fees and VAT
+// still come from the billing policy, so this is not client-supplied pricing.
+func (r *StorefrontRepository) QuoteLines(
+	ctx context.Context,
+	cartType, regionCode string,
+	tip, discount float64,
+	lines []QuoteLine,
+) (CartQuote, error) {
+	cfg, err := r.billing.GetBillingConfig(ctx, regionCode)
+	if err != nil {
+		return CartQuote{}, err
+	}
+
+	var subtotal, mrpTotal float64
+	itemCount := 0
+
+	for _, line := range lines {
+		if line.Quantity <= 0 || strings.TrimSpace(line.ProductID) == "" {
+			continue
+		}
+
+		var price, promoPrice *float64
+		var isPromo bool
+		err := r.db.QueryRow(ctx, `
+			SELECT price::float8, promo_price::float8, COALESCE(is_promo, false)
+			FROM food_products WHERE id = $1`, line.ProductID).
+			Scan(&price, &promoPrice, &isPromo)
+		if err != nil {
+			// An unknown product contributes nothing rather than failing the
+			// whole bill.
+			continue
+		}
+		if price == nil {
+			continue
+		}
+
+		unit := *price
+		if isPromo && promoPrice != nil {
+			unit = *promoPrice
+		}
+
+		// Option deltas, restricted to options that really belong to this
+		// product — a client can't invent a discount by sending another
+		// product's option ids.
+		var delta float64
+		if len(line.SelectedOptionIDs) > 0 {
+			_ = r.db.QueryRow(ctx, `
+				SELECT COALESCE(sum(po.price_delta), 0)::float8
+				FROM product_options po
+				JOIN product_option_groups g ON g.id = po.group_id
+				WHERE po.id = ANY($1) AND g.product_id = $2
+				  AND po.is_active AND g.is_active`,
+				line.SelectedOptionIDs, line.ProductID).Scan(&delta)
+		}
+
+		subtotal += (unit + delta) * float64(line.Quantity)
+		mrpTotal += (*price + delta) * float64(line.Quantity)
+		itemCount += line.Quantity
+	}
+
+	return r.billing.QuoteCart(ctx, cfg, subtotal, mrpTotal, discount, tip, itemCount), nil
 }

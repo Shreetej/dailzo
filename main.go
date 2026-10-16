@@ -74,6 +74,12 @@ func main() {
 	groceryRepo := repository.NewGroceryRepository(db.DB)
 	adminRepo := repository.NewAdminRepository(db.DB)
 
+	// Vendor-facing complaints and outlet ratings. The Partner app has always
+	// called these endpoints; they had no server-side implementation, so every
+	// complaint and ratings screen in the app 404'd.
+	vendorSupportRepo := repository.NewVendorSupportRepository(db.DB)
+	vendorSupportController := controllers.NewVendorSupportController(vendorSupportRepo)
+
 	// Server-driven i18n: translate-on-write + admin-configurable surfaces.
 	translator := i18n.NewTranslator()
 	translationRepo := repository.NewTranslationRepository(db.DB, translator)
@@ -100,7 +106,10 @@ func main() {
 	marketingController := controllers.NewMarketingController(marketingRepo, registrationRepo)
 	registrationController := controllers.NewRegistrationController(registrationRepo)
 	storefrontRepo := repository.NewStorefrontRepository(db.DB)
-	storefrontController := controllers.NewStorefrontController(storefrontRepo, translationRepo)
+	// Fees and VAT are a server-owned policy an admin edits, not constants in
+	// the mobile apps.
+	billingRepo := repository.NewBillingRepository(db.DB)
+	storefrontController := controllers.NewStorefrontController(storefrontRepo, translationRepo, vendorSupportRepo, billingRepo)
 
 	// Vendor "Product Intelligence" analytics (top products/categories,
 	// low sellers) aggregated from orders.items jsonb.
@@ -208,12 +217,7 @@ func main() {
 	}))
 
 	// ─── Health Check ───────────────────────────────────────────────────
-	app.Get("/health", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"status":  "ok",
-			"service": "dailzo-backend",
-		})
-	})
+	app.Get("/health", healthCheck)
 
 	// ─── Legacy Routes (/api) ───────────────────────────────────────────
 	routes.SetupRoutes(
@@ -292,6 +296,18 @@ func main() {
 	v1.Get("/catalog/categories", storefrontController.GetCategories)
 	v1.Get("/catalog/products", storefrontController.GetProducts)
 	v1.Get("/catalog/restaurants", storefrontController.GetRestaurants)
+	// Customisation groups for one product. Registered after the plain
+	// /catalog/products route so it doesn't shadow it.
+	v1.Get("/catalog/products/:id/options", storefrontController.GetProductOptions)
+	// Billing policy + the priced cart. The apps render these rather than
+	// computing fees or VAT themselves.
+	v1.Get("/config/billing", storefrontController.GetBillingConfig)
+	v1.Get("/admin/billing-config", jwtHandler, storefrontController.ListBillingConfigs)
+	v1.Put("/admin/billing-config/:region", jwtHandler, storefrontController.UpdateBillingConfig)
+	v1.Get("/cart/quote", jwtHandler, storefrontController.GetCartQuote)
+	// Prices the lines the client is displaying, so the bill can't disagree
+	// with the list above it when the local and server carts drift apart.
+	v1.Post("/cart/quote", storefrontController.PostCartQuote)
 
 	// Server-driven config: options (enum lists) + content sections + category
 	// CRUD. GETs are public and localized via Accept-Language; mutations require
@@ -381,10 +397,45 @@ func main() {
 	// Complaints on orders this fleet's own riders delivered — resolve
 	// (service-level, no refund authority), escalate (hand off to platform
 	// admin), or log an investigation update without closing it.
+	// Fleet dashboard + payouts, aggregated over this fleet's own riders.
+	v1.Get("/delivery-vendor/kpis", jwtHandler, deliveryQueue.GetDeliveryVendorKpis)
+	v1.Get("/delivery-vendor/payout-summary", jwtHandler, deliveryQueue.GetDeliveryVendorPayoutSummary)
+	v1.Get("/delivery-vendor/earnings", jwtHandler, deliveryQueue.GetDeliveryVendorRiderEarnings)
 	v1.Get("/delivery-vendor/complaints", jwtHandler, deliveryQueue.GetDeliveryVendorComplaints)
 	v1.Post("/delivery-vendor/complaints/:id/resolve", jwtHandler, deliveryQueue.PostDeliveryVendorComplaintsResolve)
 	v1.Post("/delivery-vendor/complaints/:id/escalate", jwtHandler, deliveryQueue.PostDeliveryVendorComplaintsEscalate)
 	v1.Post("/delivery-vendor/complaints/:id/update", jwtHandler, deliveryQueue.PostDeliveryVendorComplaintsUpdate)
+
+	// Rider vehicle + KYC checklist, derived from the delivery_profiles
+	// columns captured at onboarding (there is no separate vehicle or
+	// document table). The Partner app's delivery profile screen has always
+	// called both; neither had a route, so the screen 404'd on every open.
+	v1.Get("/delivery/vehicle", jwtHandler, deliveryQueue.GetDeliveryVehicle)
+	v1.Get("/delivery/documents", jwtHandler, deliveryQueue.GetDeliveryDocuments)
+
+	// Vendor-facing complaints. Distinct from /my-complaints (the customer
+	// reading their own) and /admin/complaints (platform-wide): these are
+	// complaints filed against THIS vendor's orders, scoped by the caller's
+	// user_id. "summary" is registered before ":id" so Fiber's
+	// registration-order matching doesn't capture it as a complaint id.
+	v1.Get("/complaints/summary", jwtHandler, vendorSupportController.GetComplaintSummary)
+	v1.Get("/complaints", jwtHandler, vendorSupportController.GetComplaints)
+	v1.Get("/complaints/:id", jwtHandler, vendorSupportController.GetComplaintByID)
+	v1.Patch("/complaints/:id/status", jwtHandler, vendorSupportController.UpdateComplaintStatus)
+
+	// Outlet ratings for the vendor's own outlets.
+	v1.Get("/ratings/outlets", jwtHandler, vendorSupportController.GetOutletRatings)
+	v1.Get("/ratings/outlets/:outletId", jwtHandler, vendorSupportController.GetOutletRating)
+	v1.Get("/ratings/outlets/:outletId/reviews", jwtHandler, vendorSupportController.GetOutletReviews)
+
+	// Stateless-JWT logout: the client discards its token, this confirms the
+	// call so the app's logout path doesn't fail on a 404.
+	v1.Post("/auth/logout", jwtHandler, deliveryQueue.PostAuthLogout)
+
+	// Health check is also exposed under /api/v1 because both apps build
+	// every request off a base URL that already ends in /api/v1 — a probe of
+	// the root /health route below is unreachable for them.
+	v1.Get("/health", healthCheck)
 
 	// Delivery-partner intelligence dashboard.
 	v1.Get("/delivery/kpis", jwtHandler, deliveryAnalyticsController.Kpis)
@@ -491,4 +542,12 @@ func main() {
 	if err := app.Listen(":" + cfg.AppPort); err != nil {
 		log.Fatal().Err(err).Msg("Failed to start server")
 	}
+}
+
+// healthCheck serves both the root /health probe and its /api/v1 alias.
+func healthCheck(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{
+		"status":  "ok",
+		"service": "dailzo-backend",
+	})
 }

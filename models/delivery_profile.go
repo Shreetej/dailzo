@@ -20,7 +20,9 @@ type DeliveryProfile struct {
 	CurrentLat         *float64   `json:"current_lat,omitempty"`
 	CurrentLng         *float64   `json:"current_lng,omitempty"`
 	LastLocationUpdate *time.Time `json:"last_location_update,omitempty"`
-	WorkingHours       string     `json:"working_hours,omitempty"`
+	// NOTE: no WorkingHours field — delivery_profiles has no such column
+	// (that belongs to grocery_profiles). It used to be declared here and
+	// selected by both profile queries, which broke every read of this table.
 	VendorID           *string    `json:"vendor_id,omitempty"` // the fleet/agency this rider registered under, if any
 	IsActive           bool       `json:"is_active"`           // approved by their fleet (or platform) — distinct from IsOnline (currently on shift)
 	CreatedOn          time.Time  `json:"created_on"`
@@ -196,4 +198,22 @@ type LocationUpdate struct {
 	Status    string  `json:"status,omitempty"`
 	ETAMins   int     `json:"eta_mins,omitempty"`
 	Timestamp string  `json:"timestamp,omitempty"`
+}
+
+// DeliveryVehicle is the rider's vehicle card on the Partner app's delivery
+// profile screen (GET /delivery/vehicle). The fields come straight off
+// DeliveryProfile — there is no separate vehicle table — so this is a view of
+// onboarding state, not a new record.
+type DeliveryVehicle struct {
+	Type            string `json:"type"`
+	Number          string `json:"number"`
+	RCStatus        string `json:"rc_status"`
+	InsuranceStatus string `json:"insurance_status"`
+}
+
+// DeliveryDocument mirrors models.GroceryDocument for the rider KYC list
+// (GET /delivery/documents).
+type DeliveryDocument struct {
+	Name   string `json:"name"`
+	Status string `json:"status"`
 }

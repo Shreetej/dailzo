@@ -2,6 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(go build:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/shree/projects/pers/dailzo_vendor",
+      "/Users/shree/projects/pers/dailzocustomerapp"
     ]
   }
 }
