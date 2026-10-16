@@ -45,7 +45,18 @@ Three things made that possible, all fixed:
 
 3. **Deploy.** Push to the branch the service tracks. Railway reads
    `railway.json`, builds the Dockerfile, and health-checks `/api/v1/health`.
-   The first boot creates `schema_migrations` and applies all 27 migrations.
+   The first boot creates `schema_migrations` and applies all 28 migrations,
+   starting from `000_base_schema.sql`.
+
+   That base migration exists because the core schema — `users`,
+   `restaurants`, `food_products`, `orders` — used to live only in
+   `DatabaseScripts&ERD/DailzoScript.sql` and was applied by hand to each
+   developer's database. An empty managed Postgres had none of it, so
+   `001_new_tables.sql` died on its first foreign key:
+   `relation "public.users" does not exist`. It is generated from that ERD
+   script by `scripts/generate_base_migration.py`; regenerate it there rather
+   than editing it, and it is safe to apply to a database that was already
+   set up by hand.
 
 4. **Load the data, once.**
 
